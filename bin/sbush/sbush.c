@@ -15,20 +15,46 @@
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
-void executeBinaryInteractively(commandArgument *c_arg) {
-  int pid = fork();
-  int waitStatus =0;
-  char *path;
-  path  = getenv("PATH");
-  char *envp[] = {path, NULL};
-  char *argv[(*c_arg).argumentCount + 2];
+void waitForProcessExecution(int pid) { 
+      int waitStatus =0;    
+      do {
+        waitpid(pid, &waitStatus, WUNTRACED);
+      } while (!WIFEXITED(waitStatus) && !WIFSIGNALED(waitStatus));
+}
+
+
+void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
+  char *path = getenv("PATH");
+  envp[0] = path;
+  envp[1] = NULL;
   argv[0] = (*c_arg).command;
   int index = 0;
   for (; index < (*c_arg).argumentCount; index++) {
    argv[index + 1] = (*c_arg).arguments[index];
   }
   argv[index + 1] = NULL;
+}
 
+void executeBinaryInBackGround(commandArgument *c_arg) {
+  char *envp[2];
+  char *argv[(*c_arg).argumentCount + 2];
+  setExecutionArguments(envp, argv, c_arg);
+  int pid = fork();
+  if (pid == 0) {
+    setpgid(0,0);
+    int status = execvpe((*c_arg).command, argv, envp);
+    if (status != 0) {
+      fputs(strerror(errno), stdout);
+    }
+    exit(0);
+  }
+}
+
+void executeBinaryInteractively(commandArgument *c_arg) {
+  char *envp[2];
+  char *argv[(*c_arg).argumentCount + 2];
+  setExecutionArguments(envp, argv, c_arg);
+  int pid = fork();
   if (pid == 0) {
     int status = execvpe((*c_arg).command, argv, envp);
     if (status != 0) {
@@ -37,9 +63,7 @@ void executeBinaryInteractively(commandArgument *c_arg) {
     }
     exit(0);
   } else {
-      do {
-        waitpid(pid, &waitStatus, WUNTRACED);
-      } while (!WIFEXITED(waitStatus) && !WIFSIGNALED(waitStatus));
+      waitForProcessExecution(pid);
   }
 }
 
@@ -49,7 +73,8 @@ void executeBinary(commandArgument *c_arg) {
     executeBinaryInteractively(c_arg);
   } else {
     if(*(*c_arg).arguments[(*c_arg).argumentCount - 1] == '&') {
-      // execute in background
+      (*c_arg).argumentCount = (*c_arg).argumentCount - 1;   // Ignoring "&"
+      executeBinaryInteractively(c_arg);
     } else {
       executeBinaryInteractively(c_arg);
     }
