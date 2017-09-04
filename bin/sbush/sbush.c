@@ -19,6 +19,8 @@ char PS1[MAX_PS1_LENGTH] = "sbush~>";
 
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
+char *secure_getenv(const char *name);
+void custom_fputs(char * chr, FILE * out);
 
 void waitForProcessExecution(int pid) { 
       int waitStatus =0;    
@@ -49,7 +51,7 @@ void executeBinaryInBackGround(commandArgument *c_arg) {
     setpgid(0,0);
     int status = execvpe((*c_arg).command, argv, envp);
     if (status != 0) {
-      fputs(strerror(errno), stdout);
+      custom_fputs(strerror(errno), stdout);
     }
     exit(0);
   }
@@ -63,8 +65,8 @@ void executeBinaryInteractively(commandArgument *c_arg) {
   if (pid == 0) {
     int status = execvpe((*c_arg).command, argv, envp);
     if (status != 0) {
-      fputs((*c_arg).command, stdout);
-      fputs(": command not found.\n", stdout);
+      custom_fputs((*c_arg).command, stdout);
+      custom_fputs(": command not found.\n", stdout);
     }
     exit(0);
   } else {
@@ -89,62 +91,61 @@ void executeBinary(commandArgument *c_arg) {
 
 void executeBuiltInPwd(commandArgument *c_arg) {
  if ((*c_arg).argumentCount > 1) {
-  fputs("No argument is allowed for pwd.", stdout);
-  fputs("\n", stdout);
+  custom_fputs("No argument is allowed for pwd.", stdout);
+  custom_fputs("\n", stdout);
   return;
  }
   char cwd[1024];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
-   fputs(cwd, stdout);
-   fputs("\n", stdout);
+   custom_fputs(cwd, stdout);
+   custom_fputs("\n", stdout);
   }
 }
 
-// TODO: FIX the $ aprsing.`
 void executeBuiltInEcho(commandArgument *c_arg)
 {
-  for(int i = 0; i< (*c_arg).argumentCount; ++i)
+  for(int i = 0; i< (*c_arg).argumentCount; i++)
   {
     char *c_dollar = strchr((*c_arg).arguments[i], '$');
     if(c_dollar)
     {
-      char *ch = (*c_arg).arguments[i]+1;
-      fputs(getenv(ch), stdout);
-      fputs("\n",stdout);
+      char * result = secure_getenv(c_dollar + 1);
+      custom_fputs(result, stdout);
+      custom_fputs("\n",stdout);
     }
   }
 }
 
 void executeBuiltInExport(commandArgument *c_arg)
 {
-  for(int i = 0; i< (*c_arg).argumentCount; ++i)
+  for(int i = 0; i< (*c_arg).argumentCount; i++)
   {
-    fputs((*c_arg).arguments[i], stdout);
     char *c_equal = strchr((*c_arg).arguments[i], '=');
     if(c_equal)
     {
-      putenv((*c_arg).arguments[i]);
+      *c_equal = '\0';
+      setenv((*c_arg).arguments[i], c_equal + 1, 1);
     }
   }
 }
 
 void executeBuiltInCd(commandArgument *c_arg ) {
  if ((*c_arg).argumentCount > 1) {
-  fputs("Max 1 argument is allowed for cd.", stdout);
-  fputs("\n", stdout);
+  custom_fputs("Max 1 argument is allowed for cd.", stdout);
+  custom_fputs("\n", stdout);
   return;
  } else if ((*c_arg).argumentCount == 1) {
    int result = chdir((*c_arg).arguments[0]);
    if (result != 0) {
-     fputs(strerror(errno), stdout);
-     fputs("\n", stdout);
+     custom_fputs(strerror(errno), stdout);
+     custom_fputs("\n", stdout);
     }
   }  
   else {
      int result = chdir("/");
      if (result != 0) {
-       fputs(strerror(errno), stdout);
-       fputs("\n", stdout);
+       custom_fputs(strerror(errno), stdout);
+       custom_fputs("\n", stdout);
      }
  }
 }
@@ -181,8 +182,8 @@ void executeCommand(commandArgument * c_arg) {
              executeBuiltInEcho(c_arg);
              break;
       default:
-           fputs("BuiltIn is not implemented", stdout);
-           fputs("\n", stdout);
+           custom_fputs("BuiltIn is not implemented", stdout);
+           custom_fputs("\n", stdout);
     }
   } else {
      executeBinary(c_arg);
@@ -192,20 +193,26 @@ void executeCommand(commandArgument * c_arg) {
 
 void printParsedCommand(commandArgument * c_Arg) {
   if (c_Arg != NULL) {
-    fputs("command : ", stdout);
-    fputs((*c_Arg).command, stdout);
-    fputs("\n", stdout);
+    custom_fputs("command : ", stdout);
+    custom_fputs((*c_Arg).command, stdout);
+    custom_fputs("\n", stdout);
     for (int i = 0; i < (*c_Arg).argumentCount; i++) {
-       fputs("Argument ", stdout);
-       fputs(" : ", stdout);
-       fputs((*c_Arg).arguments[i], stdout);
-       fputs("\n", stdout);
+       custom_fputs("Argument ", stdout);
+       custom_fputs(" : ", stdout);
+       custom_fputs((*c_Arg).arguments[i], stdout);
+       custom_fputs("\n", stdout);
     }
   } else {
-   fputs("parsed command is NULL", stdout);
-   fputs("\n", stdout);
+   custom_fputs("parsed command is NULL", stdout);
+   custom_fputs("\n", stdout);
   }
 
+}
+
+void custom_fputs(char * chr, FILE * out) {
+ if (chr != NULL) {
+   fputs(chr, out);
+ }
 }
 
 
@@ -214,7 +221,7 @@ int main(int argc, char *argv[], char *envp[]) {
   char buffer[BUFFER_SIZE];
   while (TRUE) {
    char *input;
-   fputs(PS1, stdout);
+   custom_fputs(PS1, stdout);
    input = fgets(buffer, BUFFER_SIZE, stdin);
 
    commandArgument *c_Arg = parseInput(input, ' ');
@@ -227,8 +234,8 @@ int main(int argc, char *argv[], char *envp[]) {
    }
 
    if (!strcmp(input, "exit\n"))	{
-     fputs("Exiting as requested", stdout);
-     fputs("\n", stdout);
+     custom_fputs("Exiting as requested", stdout);
+     custom_fputs("\n", stdout);
      return 1;
     }
    
