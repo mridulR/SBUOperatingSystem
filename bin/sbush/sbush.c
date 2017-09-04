@@ -152,8 +152,6 @@ int main(int argc, char *argv[], char *envp[]) {
      printParsedCommand(c_Arg);
    #endif
 
-   executeCommand(c_Arg);
-
    if (input == NULL || *input == '\n') {
      fputs("No command found. Exiting", stdout);
      fputs("\n", stdout);
@@ -165,6 +163,8 @@ int main(int argc, char *argv[], char *envp[]) {
      fputs("\n", stdout);
      return 1;
     }
+   
+   executeCommand(c_Arg);
   }
   return 0;
 }
