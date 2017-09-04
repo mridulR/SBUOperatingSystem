@@ -133,7 +133,13 @@ void executeBuiltInWithoutExport(commandArgument *c_arg)
   if(c_equal)
   {
     (*c_arg).command[c_equal - (*c_arg).command] = '\0';
-    setenv((*c_arg).command, (*c_arg).command + (c_equal - (*c_arg).command) + 1, 1);
+    char *value = (*c_arg).command + (c_equal - (*c_arg).command) + 1;
+    setenv((*c_arg).command, value, 1);
+    if(strcmp((*c_arg).command, "PS1") == 0)
+    {
+      memset(PS1,'\0', 100);
+      memcpy(PS1, value, strlen(value));
+    }
   }
   executeBuiltInExport(c_arg);
 }
