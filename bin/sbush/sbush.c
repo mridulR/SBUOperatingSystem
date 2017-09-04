@@ -9,6 +9,7 @@
 #define BUILT_IN_PWD 2
 #define BUILT_IN_EXPORT 3 
 #define BUILT_IN_ECHO 4 
+#define BUILT_IN_WITHOUT_EXPORT 5
 #define TRUE 1
 #define FALSE 0
 //#define DEBUG TRUE
@@ -129,6 +130,18 @@ void executeBuiltInExport(commandArgument *c_arg)
   }
 }
 
+
+void executeBuiltInWithoutExport(commandArgument *c_arg)
+{
+  char *c_equal = strchr((*c_arg).command, '=');
+  if(c_equal)
+  {
+    (*c_arg).command[c_equal - (*c_arg).command] = '\0';
+    setenv((*c_arg).command, (*c_arg).command + (c_equal - (*c_arg).command) + 1, 1);
+  }
+  executeBuiltInExport(c_arg);
+}
+
 void executeBuiltInCd(commandArgument *c_arg ) {
  if ((*c_arg).argumentCount > 1) {
   custom_fputs("Max 1 argument is allowed for cd.", stdout);
@@ -159,6 +172,8 @@ int getBuiltInCode(commandArgument * c_arg) {
   return (int) BUILT_IN_EXPORT;
  } else if (strcmp("echo", (*c_arg).command) == 0) {
   return (int) BUILT_IN_ECHO;
+ } else if (strchr((*c_arg).command, '=') != NULL) {
+  return (int) BUILT_IN_WITHOUT_EXPORT;
  }
 
  return 0;
@@ -180,6 +195,9 @@ void executeCommand(commandArgument * c_arg) {
              break;
       case 4 :
              executeBuiltInEcho(c_arg);
+             break;
+      case 5 :
+             executeBuiltInWithoutExport(c_arg);
              break;
       default:
            custom_fputs("BuiltIn is not implemented", stdout);
