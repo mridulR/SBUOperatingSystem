@@ -108,7 +108,7 @@ void executeBuiltInCd(commandArgument *c_arg ) {
     }
   }  
   else {
-     int result = chdir("");
+     int result = chdir("/");
      if (result != 0) {
        fputs(strerror(errno), stdout);
        fputs("\n", stdout);
