@@ -9,6 +9,7 @@
 #define BUILT_IN_PWD 2
 #define BUILT_IN_EXPORT 3 
 #define BUILT_IN_ECHO 4 
+#define BUILT_IN_WITHOUT_EXPORT 5
 #define TRUE 1
 #define FALSE 0
 //#define DEBUG TRUE
@@ -108,9 +109,7 @@ void executeBuiltInEcho(commandArgument *c_arg)
     char *c_dollar = strchr((*c_arg).arguments[i], '$');
     if(c_dollar)
     {
-      char *ch = (*c_arg).arguments[i]+1;
-      fputs(getenv(ch), stdout);
-      fputs("\n",stdout);
+      fputs(getenv((*c_arg).arguments[i]+1), stdout);
     }
   }
 }
@@ -119,13 +118,24 @@ void executeBuiltInExport(commandArgument *c_arg)
 {
   for(int i = 0; i< (*c_arg).argumentCount; ++i)
   {
-    fputs((*c_arg).arguments[i], stdout);
     char *c_equal = strchr((*c_arg).arguments[i], '=');
     if(c_equal)
     {
       putenv((*c_arg).arguments[i]);
     }
   }
+}
+
+
+void executeBuiltInWithoutExport(commandArgument *c_arg)
+{
+  char *c_equal = strchr((*c_arg).command, '=');
+  if(c_equal)
+  {
+    (*c_arg).command[c_equal - (*c_arg).command] = '\0';
+    setenv((*c_arg).command, (*c_arg).command + (c_equal - (*c_arg).command) + 1, 1);
+  }
+  executeBuiltInExport(c_arg);
 }
 
 void executeBuiltInCd(commandArgument *c_arg ) {
@@ -158,6 +168,8 @@ int getBuiltInCode(commandArgument * c_arg) {
   return (int) BUILT_IN_EXPORT;
  } else if (strcmp("echo", (*c_arg).command) == 0) {
   return (int) BUILT_IN_ECHO;
+ } else if (strchr((*c_arg).command, '=') != NULL) {
+  return (int) BUILT_IN_WITHOUT_EXPORT;
  }
 
  return 0;
@@ -179,6 +191,9 @@ void executeCommand(commandArgument * c_arg) {
              break;
       case 4 :
              executeBuiltInEcho(c_arg);
+             break;
+      case 5 :
+             executeBuiltInWithoutExport(c_arg);
              break;
       default:
            fputs("BuiltIn is not implemented", stdout);
