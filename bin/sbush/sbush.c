@@ -7,10 +7,15 @@
 
 #define BUILT_IN_CD 1
 #define BUILT_IN_PWD 2
+#define BUILT_IN_EXPORT 3 
+#define BUILT_IN_ECHO 4 
 #define TRUE 1
 #define FALSE 0
 //#define DEBUG TRUE
 #define BUFFER_SIZE 1000
+#define MAX_PS1_LENGTH 100
+
+char PS1[MAX_PS1_LENGTH] = "sbush~>";
 
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
@@ -95,6 +100,34 @@ void executeBuiltInPwd(commandArgument *c_arg) {
   }
 }
 
+// TODO: FIX the $ aprsing.`
+void executeBuiltInEcho(commandArgument *c_arg)
+{
+  for(int i = 0; i< (*c_arg).argumentCount; ++i)
+  {
+    char *c_dollar = strchr((*c_arg).arguments[i], '$');
+    if(c_dollar)
+    {
+      char *ch = (*c_arg).arguments[i]+1;
+      fputs(getenv(ch), stdout);
+      fputs("\n",stdout);
+    }
+  }
+}
+
+void executeBuiltInExport(commandArgument *c_arg)
+{
+  for(int i = 0; i< (*c_arg).argumentCount; ++i)
+  {
+    fputs((*c_arg).arguments[i], stdout);
+    char *c_equal = strchr((*c_arg).arguments[i], '=');
+    if(c_equal)
+    {
+      putenv((*c_arg).arguments[i]);
+    }
+  }
+}
+
 void executeBuiltInCd(commandArgument *c_arg ) {
  if ((*c_arg).argumentCount > 1) {
   fputs("Max 1 argument is allowed for cd.", stdout);
@@ -121,7 +154,12 @@ int getBuiltInCode(commandArgument * c_arg) {
   return (int) BUILT_IN_CD;
  } else if (strcmp("pwd", (*c_arg).command) == 0) {
   return (int) BUILT_IN_PWD;
+ } else if (strcmp("export", (*c_arg).command) == 0) {
+  return (int) BUILT_IN_EXPORT;
+ } else if (strcmp("echo", (*c_arg).command) == 0) {
+  return (int) BUILT_IN_ECHO;
  }
+
  return 0;
 }
 
@@ -136,6 +174,12 @@ void executeCommand(commandArgument * c_arg) {
       case 2 :
               executeBuiltInPwd(c_arg);
               break;
+      case 3 :
+             executeBuiltInExport(c_arg);
+             break;
+      case 4 :
+             executeBuiltInEcho(c_arg);
+             break;
       default:
            fputs("BuiltIn is not implemented", stdout);
            fputs("\n", stdout);
@@ -170,7 +214,7 @@ int main(int argc, char *argv[], char *envp[]) {
   char buffer[BUFFER_SIZE];
   while (TRUE) {
    char *input;
-   fputs("sbush > ", stdout);
+   fputs(PS1, stdout);
    input = fgets(buffer, BUFFER_SIZE, stdin);
 
    commandArgument *c_Arg = parseInput(input, ' ');
