@@ -8,6 +8,20 @@
 #define COMMAND_LENGTH 20
 #define INPUT_LENGTH 500
 
+void freeCommandArgument(commandArgument* cmdArg)
+{
+  if((*cmdArg).command)
+  {
+    free((*cmdArg).command);
+  }
+  for(int i = 0; i < (*cmdArg).argumentCount; ++i)
+  {
+    if((*cmdArg).arguments[i])
+    {
+      free((*cmdArg).arguments[i]);
+    }
+  }
+}
 
 char * trim(char * input) {
   char * trimmedInput = malloc(sizeof(char) * INPUT_LENGTH);

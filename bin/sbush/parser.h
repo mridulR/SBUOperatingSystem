@@ -1,3 +1,5 @@
+#ifndef _PARSER_H
+#define _PARSER_H
 
 #define MAX_ARGUMENTS 20
 
@@ -9,3 +11,6 @@ typedef struct {
 } commandArgument;
 
 commandArgument * parseInput(char* input, char separator);
+void freeCommandArgument(commandArgument* cmdArg);
+
+#endif

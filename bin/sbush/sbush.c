@@ -32,7 +32,8 @@ void executeBinaryInteractively(commandArgument *c_arg) {
   if (pid == 0) {
     int status = execvpe((*c_arg).command, argv, envp);
     if (status != 0) {
-      fputs(strerror(errno), stdout);
+      fputs((*c_arg).command, stdout);
+      fputs(": command not found.\n", stdout);
     }
     exit(0);
   } else {
@@ -153,9 +154,7 @@ int main(int argc, char *argv[], char *envp[]) {
    #endif
 
    if (input == NULL || *input == '\n') {
-     fputs("No command found. Exiting", stdout);
-     fputs("\n", stdout);
-     return 1;
+     continue;
    }
 
    if (!strcmp(input, "exit\n"))	{
@@ -164,7 +163,8 @@ int main(int argc, char *argv[], char *envp[]) {
      return 1;
     }
    
-   executeCommand(c_Arg);
+    executeCommand(c_Arg);
+    freeCommandArgument(c_Arg);
   }
   return 0;
 }
