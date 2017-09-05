@@ -1,6 +1,7 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
+#include<sys/defs.h>
 #define MAX_ARGUMENTS 20
 
 typedef struct {

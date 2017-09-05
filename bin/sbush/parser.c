@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
+#include <sys/defs.h>
 
 #define DEBUG 1
 #define ARGUMENT_LENGTH 20
@@ -84,7 +85,7 @@ commandArgument * parseInput(char * inputLine,  char separator) {
     if (ch == separator && command_flag == 0) {
       if (count > MAX_ARGUMENTS) {
         #ifdef DEBUG
-         fputs("Too many arguments passed" ,stdout);
+                  fputs("Too many arguments passed" , stdout);
         #endif
         return NULL;
       }

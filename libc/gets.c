@@ -3,6 +3,8 @@
 
 #define LINE_LENGTH 1024 
 
+int getChar();
+
 char * gets(char *s)
 {
   int rd = 0;

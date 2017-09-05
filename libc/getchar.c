@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int getChar(void)
+int getChar() 
 {
   char ch;
-  int  rd = read(0, &ch, 1);
+  read(0, &ch, 1);
   return ch;
 }
-
-

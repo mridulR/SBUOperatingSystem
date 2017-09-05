@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include "parser.h"
+#include <sys/defs.h>
 
 #define BUILT_IN_CD 1
 #define BUILT_IN_PWD 2
@@ -19,15 +20,14 @@
 
 char PS1[MAX_PS1_LENGTH] = "sbush~>";
 
+int waitpid(int pid, int *status);
 int execvpe(const char *file, char *const argv[], char *const envp[]);
-pid_t waitpid(pid_t pid, int *stat_loc, int options);
-char *secure_getenv(const char *name);
 void custom_fputs(char * chr, FILE * out);
 
 void waitForProcessExecution(int pid) { 
       int waitStatus =0;    
       do {
-        waitpid(pid, &waitStatus, WUNTRACED);
+        waitpid(pid, &waitStatus);
       } while (!WIFEXITED(waitStatus) && !WIFSIGNALED(waitStatus));
 }
 
@@ -54,15 +54,16 @@ void executeBinaryInBackGround(commandArgument *c_arg) {
     int status = execvpe((*c_arg).command, argv, envp);
     puts((*c_arg).command); 
     if (status != 0) {
-      custom_fputs(strerror(errno), stdout);
+      custom_fputs("Error is process execution", stdout);
     }
     exit(0);
   } else  {
-     struct sigaction sigchld_action = {
+    //TODO resolve this for own libc
+    /**  struct sigaction sigchld_action = {
        .sa_handler = SIG_DFL,
        .sa_flags = SA_NOCLDWAIT
      };
-    sigaction(SIGCHLD, &sigchld_action, NULL);
+    sigaction(SIGCHLD, &sigchld_action, NULL); **/
   }
 }
 
@@ -113,7 +114,7 @@ void executeBuiltInEcho(commandArgument *c_arg)
     char *c_dollar = strchr((*c_arg).arguments[i], '$');
     if(c_dollar)
     {
-      char * result = secure_getenv(c_dollar + 1);
+      char * result = getenv(c_dollar + 1);
       custom_fputs(result, stdout);
       custom_fputs("\n",stdout);
     }
@@ -159,14 +160,14 @@ void executeBuiltInCd(commandArgument *c_arg ) {
  } else if ((*c_arg).argumentCount == 1) {
    int result = chdir((*c_arg).arguments[0]);
    if (result != 0) {
-     custom_fputs(strerror(errno), stdout);
+     custom_fputs("Error in cd", stdout);
      custom_fputs("\n", stdout);
     }
   }  
   else {
      int result = chdir("/");
      if (result != 0) {
-       custom_fputs(strerror(errno), stdout);
+       custom_fputs("Error in cd", stdout);
        custom_fputs("\n", stdout);
      }
  }

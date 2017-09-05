@@ -3,6 +3,8 @@
 
 #include <sys/defs.h>
 
+int setpgid(pid_t pid, pid_t pgid);
+
 int open(const char *pathname, int flags);
 int close(int fd);
 ssize_t read(int fd, void *buf, size_t count);
@@ -14,7 +16,7 @@ char *getcwd(char *buf, size_t size);
 
 pid_t fork();
 int execvpe(const char *file, char *const argv[], char *const envp[]);
-pid_t wait(int *status)
+pid_t wait(int *status);
 int waitpid(int pid, int *status);
 
 unsigned int sleep(unsigned int seconds);
