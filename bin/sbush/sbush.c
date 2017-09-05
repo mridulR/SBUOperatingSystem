@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -51,10 +52,17 @@ void executeBinaryInBackGround(commandArgument *c_arg) {
   if (pid == 0) {
     setpgid(0,0);
     int status = execvpe((*c_arg).command, argv, envp);
+    puts((*c_arg).command); 
     if (status != 0) {
       custom_fputs(strerror(errno), stdout);
     }
     exit(0);
+  } else  {
+     struct sigaction sigchld_action = {
+       .sa_handler = SIG_DFL,
+       .sa_flags = SA_NOCLDWAIT
+     };
+    sigaction(SIGCHLD, &sigchld_action, NULL);
   }
 }
 
@@ -77,15 +85,10 @@ void executeBinaryInteractively(commandArgument *c_arg) {
 
 
 void executeBinary(commandArgument *c_arg) {
-  if ((*c_arg).argumentCount == 0) {
-    executeBinaryInteractively(c_arg);
+  if ((*c_arg).isBackground) {
+    executeBinaryInBackGround(c_arg);
   } else {
-    if(*(*c_arg).arguments[(*c_arg).argumentCount - 1] == '&') {
-      (*c_arg).argumentCount = (*c_arg).argumentCount - 1;   // Ignoring "&"
-      executeBinaryInteractively(c_arg);
-    } else {
-      executeBinaryInteractively(c_arg);
-    }
+    executeBinaryInteractively(c_arg);
   }
 }
 

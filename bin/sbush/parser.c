@@ -10,6 +10,7 @@
 
 void freeCommandArgument(commandArgument* cmdArg)
 {
+  free((*cmdArg).trimmedInput);
   if((*cmdArg).command)
   {
     free((*cmdArg).command);
@@ -23,7 +24,11 @@ void freeCommandArgument(commandArgument* cmdArg)
   }
 }
 
-char * trim(char * input) {
+commandArgument * trim(char * input) {
+  commandArgument * c_arg = malloc(sizeof(commandArgument));
+  (*c_arg).command = malloc(sizeof(char) * COMMAND_LENGTH);
+  (*c_arg).isBackground = 0; 
+  
   char * trimmedInput = malloc(sizeof(char) * INPUT_LENGTH);
   int count = 0;
   int left_index = 0;
@@ -33,7 +38,10 @@ char * trim(char * input) {
    left_index++;
   }
 
-  while ((input[right_index] == ' ' || input[right_index] == '\n')  && (left_index <= right_index)) {
+  while ((input[right_index] == ' ' || input[right_index] == '\n' || input[right_index] == '&')  && (left_index <= right_index)) {
+   if (input[right_index] == '&') {
+     (*c_arg).isBackground = 1;
+   }
    right_index--;
   }
 
@@ -43,13 +51,13 @@ char * trim(char * input) {
      trimmedInput[count] = ch;
      count++;
   }
-  return trimmedInput;
+  (*c_arg).trimmedInput = trimmedInput;
+  return c_arg;
 }
 
 commandArgument * parseInput(char * inputLine,  char separator) {
-  char * input = trim(inputLine);
-  commandArgument * c_arg = malloc(sizeof(commandArgument));
-  (*c_arg).command = malloc(sizeof(char) * COMMAND_LENGTH);
+  commandArgument * c_arg = trim(inputLine);
+  char * input = (*c_arg).trimmedInput;
   char * command = (*c_arg).command;
   char * argument = NULL;
   char ch;

@@ -4,8 +4,10 @@
 #define MAX_ARGUMENTS 20
 
 typedef struct {
+  char * trimmedInput;
   char * command;
   char * arguments[MAX_ARGUMENTS];
+  int isBackground;
   int argumentCount;
 } commandArgument;
 
