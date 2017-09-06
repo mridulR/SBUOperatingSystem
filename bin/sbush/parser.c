@@ -27,6 +27,7 @@ void freeCommandArgument(commandArgument* cmdArg)
 commandArgument * trim(char * input) {
   commandArgument * c_arg = malloc(sizeof(commandArgument));
   (*c_arg).command = malloc(sizeof(char) * COMMAND_LENGTH);
+  memset((*c_arg).command, '\0', sizeof(char) * COMMAND_LENGTH);
   (*c_arg).isBackground = 0; 
   
   char * trimmedInput = malloc(sizeof(char) * INPUT_LENGTH);
