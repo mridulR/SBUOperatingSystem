@@ -13,10 +13,12 @@ void freeCommandArgument(commandArgument* cmdArg)
   free((*cmdArg).trimmedInput);
   if((*cmdArg).command)
   {
+    memset((*cmdArg).command, '\0', strlen((*cmdArg).command));
     free((*cmdArg).command);
   }
   for(int i = 0; i < (*cmdArg).argumentCount; ++i)
   {
+    memset((*cmdArg).command, '\0', strlen((*cmdArg).arguments[i]));
     if((*cmdArg).arguments[i])
     {
       free((*cmdArg).arguments[i]);

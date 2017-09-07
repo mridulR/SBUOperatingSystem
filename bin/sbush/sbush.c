@@ -73,6 +73,7 @@ void executeBinaryInteractively(commandArgument *c_arg) {
   char *envp[2];
   char *argv[(*c_arg).argumentCount + 2];
   setExecutionArguments(envp, argv, c_arg);
+  int pgid = tcgetpgrp(0);
   int pid = fork();
   if (pid == 0) {
     int status = execvpe((*c_arg).command, argv, envp);
@@ -83,6 +84,7 @@ void executeBinaryInteractively(commandArgument *c_arg) {
     exit(0);
   } else {
       waitForProcessExecution(pid);
+      tcsetpgrp(0, pgid); 
   }
 }
 
@@ -337,60 +339,98 @@ void parsePipeCommand(commandArgument *c_Args[], int numOfPipes, char * input) {
    }
 }
 
+void parseAndExecuteCommand(char * input) {
+     if(strchr(input, '|') != NULL) {
+       // Implement piping support
+       int numOfPipes = countNumberOfPipes(input);
+       commandArgument *c_Args[numOfPipes + 1];
+       parsePipeCommand(c_Args, numOfPipes, input);
+       if (isValidateParsedPipeInput(c_Args, numOfPipes)) {
+         if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+                gracefulExit("signal");
+         }
+         int pgid = tcgetpgrp(0);
+         int c_pid = fork();
+         switch(c_pid) {
+          case 0:
+            runPiping(c_Args, numOfPipes + 1, 0, 0);
+            exit(0);
+          default:
+            waitForProcessExecution(c_pid);
+            tcsetpgrp(0, pgid); 
+         }
+        } else {
+           custom_fputs("Invalid pipe syntex. Try Again", stdout);
+           custom_fputs("\n", stdout);
+        }
+        freeAllParsedCommandArguments(c_Args, numOfPipes);
+     } else {
+      commandArgument *c_Arg = parseInput(input, ' ');
+      #ifdef DEBUG
+        printParsedCommand(c_Arg);
+      #endif
+      executeCommand(c_Arg);
+      freeCommandArgument(c_Arg);
+      }
+    }
+
+
+// TODO Fix it
+void executeFile(char * file_path) {
+              
+              FILE * fp = fopen(file_path, "rb");
+              char line[150];
+              char *shell;
+              char *path = getenv("PATH");
+              char *envp[] = {path, NULL};
+              char *argv[3];
+              int status = 0;
+   
+              shell = fgets(line,150, fp);
+              puts(shell + 2);
+              shell[((int) strlen(shell)) - 1] = '\0';
+		printf("%s --- %d ", shell, (int ) strlen(shell));
+
+              if (shell[0] == '#' && shell[1] == '!') {
+                argv[0] = "sbush";
+                argv[1] = file_path;
+                argv[2] = NULL;
+                status = execvpe( "sbush", argv, envp);
+                if (status != 0) {
+                   puts(line + 2);
+                   printf("%s --- %d ", line, (int ) strlen(line));
+                   puts(strerror(errno));
+                }
+
+}
+ fclose(fp);
+}
 
 int main(int argc, char *argv[], char *envp[]) {
- 
-  char buffer[BUFFER_SIZE];
-  while (TRUE) {
-   custom_fputs(PS1, stdout);
+  printf("in Main"); 
+  if (argc == 1) {
+    printf("ROit \n");
+    // Run interactively
+    char buffer[BUFFER_SIZE];
+    while (TRUE) {
+     custom_fputs(PS1, stdout);
+     char * input = fgets(buffer, BUFFER_SIZE, stdin);
+     if (input == NULL || *input == '\n') {
+       continue;
+     }
 
-   char * input = fgets(buffer, BUFFER_SIZE, stdin);
-
-   if (input == NULL || *input == '\n') {
-     continue;
-   }
-
-   if (!strcmp(input, "exit\n")) {
-     custom_fputs("Exiting as requested", stdout);
-     custom_fputs("\n", stdout);
-     return 1;
+     if (!strcmp(input, "exit\n")) {
+       custom_fputs("Exiting as requested", stdout);
+       custom_fputs("\n", stdout);
+       return 1;
+     }
+     parseAndExecuteCommand(input);
     }
-
-   if(strchr(input, '|') != NULL) {
-     // Implement piping support
-      int numOfPipes = countNumberOfPipes(input);
-      commandArgument *c_Args[numOfPipes + 1];
-      parsePipeCommand(c_Args, numOfPipes, input);
-      if (isValidateParsedPipeInput(c_Args, numOfPipes)) {
-        if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-               gracefulExit("signal");
-             }
-        int pgid = tcgetpgrp(0);
-        int c_pid = fork();
-        switch(c_pid){
-         case 0:
-           runPiping(c_Args, numOfPipes + 1, 0, 0);
-           exit(0);
-         default:
-             //waitpid(c_pid, &status, WNOHANG);
-             waitForProcessExecution(c_pid);
-             tcsetpgrp(0, pgid); 
-             continue;
-         }
-      } else {
-         custom_fputs("Invalid pipe syntex. Try Again", stdout);
-         custom_fputs("\n", stdout);
-      }
-      freeAllParsedCommandArguments(c_Args, numOfPipes);
    } else {
-    commandArgument *c_Arg = parseInput(input, ' ');
-    #ifdef DEBUG
-      printParsedCommand(c_Arg);
-    #endif
-    executeCommand(c_Arg);
-    freeCommandArgument(c_Arg);
-    }
-  }
+    printf("ROit is here\n");
+    // Run script  ====>  only supporting sbush <filename>
+            executeFile(argv[1]);
+   }
   return 0;
 }
 
