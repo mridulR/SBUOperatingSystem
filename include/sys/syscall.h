@@ -325,4 +325,10 @@ int fclose(FILE *f)
   return retVal;
 }
 
+int execvpe(const char *file, char *const argv[], char *const envp[])
+{
+  int retVal = execve(file, argv, envp);
+  return retVal;
+}
+
 #endif
