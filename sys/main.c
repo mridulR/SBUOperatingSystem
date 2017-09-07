@@ -1,4 +1,4 @@
-#include <sys/defs.h>
+#include <sys/types.h>
 #include <sys/gdt.h>
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>

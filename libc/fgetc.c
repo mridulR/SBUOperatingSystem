@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/defs.h>
+#include <sys/types.h>
 
 int fgetc(FILE *fp)
 {

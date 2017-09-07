@@ -1,8 +1,15 @@
-#ifndef _DEFS_H
-#define _DEFS_H
+#ifndef _TYPES_H
+#define _TYPES_H
 
 #define NULL ((void*)0)
 #define EOF (-1)
+#define __exit __section(.exit.text) __exitused __cold notrace
+
+#define EXIT_SUCCESS 0 
+#define EXIT_FAILURE -1
+#define SA_NOCLDWAIT  0x00000002
+
+
 
 typedef unsigned long  uint64_t;
 typedef          long   int64_t;

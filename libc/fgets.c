@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/defs.h>
+#include <sys/types.h>
 
 char *fgets(char *s, int size, FILE *stream)
 {

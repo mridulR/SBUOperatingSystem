@@ -1,8 +1,7 @@
 #ifndef _STRING_H
 #define _STRING_H
 
-#include <sys/defs.h>
-
+#include <sys/types.h>
 
 
 int strcmp(const char * s1, const char * s2);

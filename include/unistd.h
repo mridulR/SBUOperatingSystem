@@ -1,7 +1,7 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
-#include <sys/defs.h>
+#include <sys/types.h>
 
 int open(const char *pathname, int flags);
 int close(int fd);
@@ -15,7 +15,7 @@ char *getcwd(char *buf, int size);
 int fork();
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 int wait(int *status);
-int waitpid(int pid, int *status, int options );
+int waitpid(int pid, int *status, int options);
 
 unsigned int sleep(unsigned int seconds);
 

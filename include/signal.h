@@ -1,7 +1,7 @@
 #ifndef _SIGNAL_H
 #define _SIGNAL_H
 
-#include <sys/defs.h>
+#include <sys/types.h>
 
 #define	_WSTOPPED 0177		/* _WSTATUS if process is stopped */
 #define	_W_INT(w) (*(int *)&(w))	/* convert union wait to int */

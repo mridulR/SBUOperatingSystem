@@ -1,11 +1,12 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include "parser.h"
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define BUILT_IN_CD 1
 #define BUILT_IN_PWD 2
@@ -19,16 +20,12 @@
 //#define DEBUG TRUE
 #define BUFFER_SIZE 1000
 #define MAX_PS1_LENGTH 100
-#define __exit __section(.exit.text) __exitused __cold notrace
-
-#define EXIT_SUCCESS 0 
-#define EXIT_FAILURE -1
-#define SA_NOCLDWAIT  0x00000002
 
 char PS1[MAX_PS1_LENGTH] = "sbush~>";
 
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 void custom_fputs(char * chr, FILE * out);
+int waitpid(int pid, int *status, int options);
 
 static int child = 0;
 
@@ -65,13 +62,7 @@ void executeBinaryInBackGround(commandArgument *c_arg) {
     setpgid(0,0);
     execvpe((*c_arg).command, argv, envp);
     custom_fputs("Unable to run in bg\n", stdout);
-  } else  {
-        SigactionData sigchld_action = {
-       .sa_handler = SIG_DFL,
-       .sa_flags = SA_NOCLDWAIT
-     };
-    sigaction(SIGCHLD, &sigchld_action, NULL);
-  }
+  } 
 }
 
 void executeBinaryInteractively(commandArgument *c_arg) {

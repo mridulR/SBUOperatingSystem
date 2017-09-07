@@ -32,6 +32,7 @@
 #define __NR_setpgid_64 109
 #define __NR_getpgrp_64 111
 #define __NR_ioctl_64 16
+#define __NR_brk_64 12 
 
 
 int read(int fd, void *buf, int size)
@@ -271,6 +272,19 @@ int tcsetpgrp(int fd, int pgrp)
   return ret;
 }
 
+int brk(void *addr)
+{
+  int ret;
+  __asm__ __volatile__
+  (
+      "syscall"
+      :"=a" (ret)
+      :"0"(__NR_brk_64), "b" (addr)
+      :"cc"
+  );
+  return ret;
+}
+
 #if 0
 #define __NR_write_32 4
 int write(int fd, const void *buf, int size)
@@ -330,5 +344,11 @@ int execvpe(const char *file, char *const argv[], char *const envp[])
   int retVal = execve(file, argv, envp);
   return retVal;
 }
+
+//TODO: Add the brk logic here.
+/*void *sbrk(intptr_t increment)
+{
+    
+}*/
 
 #endif
