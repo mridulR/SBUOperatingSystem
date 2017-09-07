@@ -324,7 +324,6 @@ int isValidateParsedPipeInput(commandArgument *c_Args[], int numOfPipes) {
 }
 
 void parsePipeCommand(commandArgument *c_Args[], int numOfPipes, char * input) {
-   char *ch = strchr(input, '\n');
    char * prev = input;
    char * next;
    for (int i = 0 ; i <= numOfPipes; i++) {
@@ -387,9 +386,10 @@ void executeFile(char * file_path) {
   char *envp[] = {path, NULL};
   // Either read entire file or line by line.
   if(line[0] == '#' && line[1] == '!') {
-    if(strcmp(binaryName, "rootfs/bin/sbush") == 0)
+    if(strcmp(line, "rootfs/bin/sbush") == 0)
     {
       //TODO: DO this for each line.
+      char *startPos = 0;
       parseAndExecuteCommand(startPos+1);
     }
     else{
