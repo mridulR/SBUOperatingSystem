@@ -377,20 +377,39 @@ void parseAndExecuteCommand(char * input) {
       }
     }
 
-
-// TODO Fix it
 void executeFile(char * file_path) {
   FILE * fp = fopen(file_path, "r");
   char line[150];
+  char * newLine = malloc(150 * sizeof(char));
+  memset(newLine, '\0', 150 * sizeof(char));
   char *path = getenv("PATH");
   char *envp[] = {path, NULL};
-  // Either read entire file or line by line.
+  int isSbush = 0;
+  char * currentLine = fgets(line, sizeof(line), fp);
+  currentLine[strlen(currentLine) - 1] = '\0';
+  if(strcmp(currentLine, "#!rootfs/bin/sbush\0") == 0){
+    isSbush = 1;    
+  }
+  fclose(fp);
+  // Hacky way of reading file with fgets as it was getting random characters in buffer.
   if(line[0] == '#' && line[1] == '!') {
-    if(strcmp(line, "rootfs/bin/sbush") == 0)
+    if(isSbush)
     {
-      //TODO: DO this for each line.
-      char *startPos = 0;
-      parseAndExecuteCommand(startPos+1);
+      FILE *fp1 = fopen(file_path, "r");
+      currentLine = fgets(line, sizeof(line), fp1);
+      while(1) {
+        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
+          break;
+        }
+        memset(line, '\0', sizeof(line));
+        currentLine = fgets(line, sizeof(line), fp1);
+        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
+          // do nothing
+        } else {
+           parseAndExecuteCommand(currentLine);
+        }
+     } 
+     fclose(fp1);
     }
     else{
       char *argv[3];
@@ -399,11 +418,10 @@ void executeFile(char * file_path) {
       argv[2] = NULL;
       int status = execvpe( line + 2, argv, envp);
       if (status != 0) {
-        puts("Unable to execute");
+        custom_fputs("Error while executing other shell \n", stdout);
       }
     }
   }
-  fclose(fp);
 }
 
 int main(int argc, char *argv[], char *envp[]) {
@@ -425,7 +443,7 @@ int main(int argc, char *argv[], char *envp[]) {
     }
   } 
   else {
-    // Run script  ====>  only supporting sbush <filename>
+    // Run script  ====>  only supporting sbush <filename> with no space after shabang #!<path_to_executor>
     executeFile(argv[1]);
   }
   return 0;
