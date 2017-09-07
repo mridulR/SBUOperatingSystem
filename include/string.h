@@ -3,6 +3,10 @@
 
 #include <sys/defs.h>
 
+
+
+int strcmp(const char * s1, const char * s2);
+
 /**
    @brief calculate the length of the string terminated by NULL or '\0'
 
