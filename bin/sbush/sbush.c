@@ -1,10 +1,11 @@
-#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include "parser.h"
+#include <sys/syscall.h>
+#include <signal.h>
 
 #define BUILT_IN_CD 1
 #define BUILT_IN_PWD 2
@@ -18,19 +19,21 @@
 //#define DEBUG TRUE
 #define BUFFER_SIZE 1000
 #define MAX_PS1_LENGTH 100
+#define __exit __section(.exit.text) __exitused __cold notrace
 
+#define EXIT_SUCCESS 0 
+#define EXIT_FAILURE -1
+#define SA_NOCLDWAIT  0x00000002
 
 char PS1[MAX_PS1_LENGTH] = "sbush~>";
 
 int execvpe(const char *file, char *const argv[], char *const envp[]);
-pid_t waitpid(pid_t pid, int *stat_loc, int options);
-char *secure_getenv(const char *name);
 void custom_fputs(char * chr, FILE * out);
 
 static int child = 0;
 
 static void gracefulExit(const char* msg) {
-  (child ? _exit : exit)(EXIT_FAILURE);
+  (child ? exit : exit)(EXIT_FAILURE);
 }
 
 void waitForProcessExecution(int pid) { 
@@ -61,9 +64,9 @@ void executeBinaryInBackGround(commandArgument *c_arg) {
   if (pid == 0) {
     setpgid(0,0);
     execvpe((*c_arg).command, argv, envp);
-    custom_fputs(strerror(errno), stdout);
+    custom_fputs("Unable to run in bg\n", stdout);
   } else  {
-     struct sigaction sigchld_action = {
+        SigactionData sigchld_action = {
        .sa_handler = SIG_DFL,
        .sa_flags = SA_NOCLDWAIT
      };
@@ -120,7 +123,7 @@ void executeBuiltInEcho(commandArgument *c_arg)
     char *c_dollar = strchr((*c_arg).arguments[i], '$');
     if(c_dollar)
     {
-      char * result = secure_getenv(c_dollar + 1);
+      char * result = getenv(c_dollar + 1);
       custom_fputs(result, stdout);
       custom_fputs("\n",stdout);
     }
@@ -166,14 +169,14 @@ void executeBuiltInCd(commandArgument *c_arg ) {
  } else if ((*c_arg).argumentCount == 1) {
    int result = chdir((*c_arg).arguments[0]);
    if (result != 0) {
-     custom_fputs(strerror(errno), stdout);
+     custom_fputs("Error in cd", stdout);
      custom_fputs("\n", stdout);
     }
   }  
   else {
      int result = chdir("/");
      if (result != 0) {
-       custom_fputs(strerror(errno), stdout);
+       custom_fputs("Error in cd", stdout);
        custom_fputs("\n", stdout);
      }
  }

@@ -4,9 +4,9 @@
 #include <sys/defs.h>
 
 int main(int argc, char *argv[], char *envp[]);
-void exit(int status);
+void exit();
 
-void *malloc(size_t size);
+void *malloc(int size);
 void free(void *ptr);
 
 #endif

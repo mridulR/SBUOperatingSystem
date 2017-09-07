@@ -1,5 +1,6 @@
 #include <unistd.h>
-#include <sys/types.h>
+#include <sys/defs.h>
+//#include <sys/types.h>
 #include <string.h>
 
 
@@ -7,10 +8,9 @@ typedef struct {
   size_t sizeOfBlock;
   int free;
   struct meta_block * next;
-
 } meta_block;
 
-static meta_block *ROOT = NULL;
+meta_block *ROOT = NULL;
 
 meta_block * getNewBlock(size_t size) {
 meta_block * new_meta_block = sbrk(0);
@@ -38,13 +38,13 @@ void allocateMemoryWhenListIsEmpty(meta_block ** root, size_t size) {
 }
 
 meta_block * getMemoryOfRequisiteSizeFromList(size_t size) {
-  meta_block * trav = ROOT;
+  meta_block* trav = ROOT;
   while (trav != NULL) {
     if (trav->sizeOfBlock >= size && trav->free == 1) {
        trav->free = 0;
        return trav;
     }
-    trav = trav->next;
+    trav = (meta_block *)trav->next;
   }
   return NULL;
 }
@@ -56,7 +56,7 @@ meta_block * getMemoryBlockFromOs(size_t size) {
  return ROOT;
 }
 
-void *malloc(size_t size) {
+void *malloc(int size) {
   if (size <= 0) {  // Invalid Arguments
     return NULL;
   }
@@ -86,13 +86,4 @@ void free (void * ptr) {
   if (casted_meta_block != NULL) {
     casted_meta_block->free = 1;
   }
-}
-
-
-int main() {
-   char * ch = malloc(20 * sizeof(char));
-   char * ph = malloc(30 * sizeof(char));
-   free(ph);
-   char * mh = malloc(15 * sizeof(char));  
- return 0;
 }

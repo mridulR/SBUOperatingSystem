@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
+#include <sys/defs.h>
 
 #define DEBUG 1
 #define ARGUMENT_LENGTH 20

@@ -3,11 +3,7 @@
 
 #include <sys/defs.h>
 
-#define STDIN 0
-#define STDOUT 1
-#define STDERR 2
-
-static const int EOF = -1;
+extern int EOF;
 
 int putchar(int c);
 int puts(const char *s);
@@ -19,8 +15,12 @@ char *gets(char *s);
 
 int fputs(const char *s, FILE *stream);
 
+char *fgets(char *s, int size, FILE *stream);
+
+int fgetc(FILE *fp);
+
 char *gets(char *s);
 
-int getChar(void);
+int getchar(void);
 
 #endif
