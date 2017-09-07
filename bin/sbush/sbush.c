@@ -12,7 +12,9 @@
 #define BUILT_IN_ECHO 4 
 #define BUILT_IN_WITHOUT_EXPORT 5
 #define TRUE 1
+#define true 1
 #define FALSE 0
+#define false 0
 //#define DEBUG TRUE
 #define BUFFER_SIZE 1000
 #define MAX_PS1_LENGTH 100
@@ -293,9 +295,9 @@ void runPiping(commandArgument *c_Args[], int numberOfCommands, int currentComma
 
 
 
-int countNumberOfPipes(char * input) {
+int countNumberOfPipes(char* input) {
  int count = 0;
- while (*input) {
+ while(*input) {
   if(*input == '|') {
    count++;
   }
@@ -322,6 +324,7 @@ int isValidateParsedPipeInput(commandArgument *c_Args[], int numOfPipes) {
 }
 
 void parsePipeCommand(commandArgument *c_Args[], int numOfPipes, char * input) {
+   char *ch = strchr(input, '\n');
    char * prev = input;
    char * next;
    for (int i = 0 ; i <= numOfPipes; i++) {
@@ -340,7 +343,8 @@ void parsePipeCommand(commandArgument *c_Args[], int numOfPipes, char * input) {
 }
 
 void parseAndExecuteCommand(char * input) {
-     if(strchr(input, '|') != NULL) {
+     char *ch = strchr(input, '|');
+     if(ch) {
        // Implement piping support
        int numOfPipes = countNumberOfPipes(input);
        commandArgument *c_Args[numOfPipes + 1];
@@ -377,60 +381,53 @@ void parseAndExecuteCommand(char * input) {
 
 // TODO Fix it
 void executeFile(char * file_path) {
-              
-              FILE * fp = fopen(file_path, "rb");
-              char line[150];
-              char *shell;
-              char *path = getenv("PATH");
-              char *envp[] = {path, NULL};
-              char *argv[3];
-              int status = 0;
-   
-              shell = fgets(line,150, fp);
-              puts(shell + 2);
-              shell[((int) strlen(shell)) - 1] = '\0';
-		printf("%s --- %d ", shell, (int ) strlen(shell));
-
-              if (shell[0] == '#' && shell[1] == '!') {
-                argv[0] = "sbush";
-                argv[1] = file_path;
-                argv[2] = NULL;
-                status = execvpe( "sbush", argv, envp);
-                if (status != 0) {
-                   puts(line + 2);
-                   printf("%s --- %d ", line, (int ) strlen(line));
-                   puts(strerror(errno));
-                }
-
-}
- fclose(fp);
+  FILE * fp = fopen(file_path, "r");
+  char line[150];
+  char *path = getenv("PATH");
+  char *envp[] = {path, NULL};
+  // Either read entire file or line by line.
+  if(line[0] == '#' && line[1] == '!') {
+    if(strcmp(binaryName, "rootfs/bin/sbush") == 0)
+    {
+      //TODO: DO this for each line.
+      parseAndExecuteCommand(startPos+1);
+    }
+    else{
+      char *argv[3];
+      argv[0] = line + 2;
+      argv[1] = file_path;
+      argv[2] = NULL;
+      int status = execvpe( line + 2, argv, envp);
+      if (status != 0) {
+        puts("Unable to execute");
+      }
+    }
+  }
+  fclose(fp);
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-  printf("in Main"); 
   if (argc == 1) {
-    printf("ROit \n");
     // Run interactively
     char buffer[BUFFER_SIZE];
     while (TRUE) {
-     custom_fputs(PS1, stdout);
-     char * input = fgets(buffer, BUFFER_SIZE, stdin);
-     if (input == NULL || *input == '\n') {
-       continue;
-     }
-
-     if (!strcmp(input, "exit\n")) {
-       custom_fputs("Exiting as requested", stdout);
-       custom_fputs("\n", stdout);
-       return 1;
-     }
-     parseAndExecuteCommand(input);
+      custom_fputs(PS1, stdout);
+      char * input = fgets(buffer, BUFFER_SIZE, stdin);
+      if (input == NULL || *input == '\n') {
+        continue;
+      }
+      if (!strcmp(input, "exit\n")) {
+        custom_fputs("Exiting as requested", stdout);
+        custom_fputs("\n", stdout);
+        return 1;
+      }
+      parseAndExecuteCommand(input);
     }
-   } else {
-    printf("ROit is here\n");
+  } 
+  else {
     // Run script  ====>  only supporting sbush <filename>
-            executeFile(argv[1]);
-   }
+    executeFile(argv[1]);
+  }
   return 0;
 }
 
