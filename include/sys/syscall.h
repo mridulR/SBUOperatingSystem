@@ -34,6 +34,7 @@
 #define __NR_getpgrp_64 111
 #define __NR_ioctl_64 16
 #define __NR_brk_64 12 
+#define __NR_lseek_64 8
 
 
 int read(int fd, void *buf, int size)
@@ -298,6 +299,20 @@ int munmap(void *addr, int length)
   );
   return ret;
 }
+
+off_t lseek(int fd, off_t offset, int whence)
+{
+  long int ret;
+  __asm__ __volatile__
+  (
+      "syscall"
+      :"=a" (ret)
+      :"0"(__NR_lseek_64), "b" (fd), "c" (offset), "d" (whence)
+      :"cc"
+  );
+  return ret;
+}
+
 #if 0
 #define __NR_write_32 4
 int write(int fd, const void *buf, int size)
