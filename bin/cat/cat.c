@@ -25,17 +25,27 @@ int cat(int read_fd, int write_fd)
 
 
 int main(int argc, char *argv[], char *env[]) {
-if (argc == 2)
+
+if (argc >= 1)
 {
-        int fd = open(argv[1], O_RDONLY);
-        if (fd < 0) {
-          fputs("Failed to open file for reading\n", stdout);
-        } else {
-            if (cat(fd, 1) != 0) {
-                fputs("Failed to write file to standard output\n", stdout);
-            }
-            close(fd);
-        }
-    }
+  fputs("aaya", stdout);
+  fputs(argv[0], stdout);
+  fputs(argv[1], stdout);
+
+  int fd = open(argv[0], O_RDONLY);
+  if (fd < 0) {
+    fputs("Failed to open file for reading\n", stdout);
+  } else {
+      if (cat(fd, 1) != 0) {
+          fputs("Failed to write file to standard output\n", stdout);
+      }
+      close(fd);
+  }
+}
+else{
+fputs("H", stdout);
+  cat(0,1);
+}
  return 1;
 }
+

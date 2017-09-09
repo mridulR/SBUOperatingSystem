@@ -11,14 +11,7 @@
 
 int main(int argc, char* argv[], char* env[])
 {
-    char cwd[1024];
-    //char buf[200];
-    getcwd(cwd, sizeof(cwd));
-    int fd = open(cwd, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC);
-    if(fd == -1){
-      fputs("Unable to open current directory\n", stdout);
-    }
-    //TODO: Loop aropund to print line by line 
+    //TODO: FIX opendir, readdir first buddy
     /*DIR *current_working_directory;
     struct dirent *file;
     char cwd[1024];
@@ -31,6 +24,5 @@ int main(int argc, char* argv[], char* env[])
           fputs("\n", stdout);
         }
     }*/
-    close(fd);
     return 1;
 }

@@ -101,7 +101,9 @@ void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
   }
   argv[index + 1] = NULL;
   
-  if(strcmp((*c_arg).command, "rootfs/bin/sbush") != 0)
+  if((strcmp((*c_arg).command, "rootfs/bin/sbush") != 0) && 
+     (strcmp((*c_arg).command, "rootfs/bin/ls") != 0) && 
+     (strcmp((*c_arg).command, "rootfs/bin/cat") != 0))
   {
     char buf[100];
     memset(buf, '\0', 100);
