@@ -3,6 +3,14 @@
 
 #include <sys/types.h>
 
+extern FILE *STDERR;
+extern FILE *STDIN;
+extern FILE *STDOUT;
+
+#define stdin  STDIN
+#define stdout STDOUT
+#define stderr STDERR
+
 int putchar(int c);
 int puts(const char *s);
 int printf(const char *format, ...);

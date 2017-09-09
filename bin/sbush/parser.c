@@ -37,11 +37,12 @@ commandArgument * trim(char * input) {
   int count = 0;
   int left_index = 0;
   int right_index = strlen(input) - 1;
-  
+  memset(trimmedInput, '\0', INPUT_LENGTH); 
+
   while (input[left_index] == ' ' && (left_index <= right_index)) {
    left_index++;
   }
-
+  
   while ((input[right_index] == ' ' || input[right_index] == '\n' || input[right_index] == '&')  && (left_index <= right_index)) {
    if (input[right_index] == '&') {
      (*c_arg).isBackground = 1;
@@ -49,12 +50,12 @@ commandArgument * trim(char * input) {
    right_index--;
   }
 
-
   for (int index = left_index; index <= right_index; index++) {
    char ch = input[index];
      trimmedInput[count] = ch;
      count++;
   }
+  trimmedInput[right_index+2] = '\0';
   (*c_arg).trimmedInput = trimmedInput;
   return c_arg;
 }

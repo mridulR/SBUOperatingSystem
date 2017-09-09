@@ -5,7 +5,7 @@ void *memcpy(void *dest, const void *src, size_t n)
     const unsigned char *source = src;
     unsigned char *destination = dest;
 
-    if(source == NULL || destination == NULL)
+    if(source == NULL) 
     {
       return dest;
     }

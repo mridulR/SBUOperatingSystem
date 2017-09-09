@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 
 char *fgets(char *s, int size, FILE *stream)
@@ -20,5 +20,5 @@ char *fgets(char *s, int size, FILE *stream)
   if (ch == s || c == (EOF)){
 	return NULL;
   }
-return ch;
+return s;
 }

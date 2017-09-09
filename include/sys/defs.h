@@ -34,12 +34,6 @@ typedef struct __sFile FILE;
 typedef uint32_t __uid_t;
 typedef uint32_t __uid_t;
 
-int fileno (FILE *fp)
-{
-  return (fp->fd);
-}
-
-
 #define _NIOBRW 16
 extern FILE _iob[_NIOBRW];
 
