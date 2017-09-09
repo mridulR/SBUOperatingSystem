@@ -1,7 +1,13 @@
 #include <stdio.h>
-#include <fcntl.h>
+//#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/syscall.h>
+
+#define O_RDONLY    0x0000
+#define O_WRONLY    0x0001
+#define O_RDWR      0x0002
+#define O_ACCMODE   0x0003
 
 int cat(int read_fd, int write_fd)
 {
@@ -18,7 +24,7 @@ int cat(int read_fd, int write_fd)
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[], char *env[]) {
 if (argc == 2)
 {
         int fd = open(argv[1], O_RDONLY);

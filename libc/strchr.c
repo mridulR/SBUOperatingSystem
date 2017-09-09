@@ -4,10 +4,7 @@
 char *strchr(char *s, char c)
 {
   char *ch = s;
-  if(!s)
-    return NULL;
-
-  while(ch!=NULL)
+  while(*ch!= '\0' && *ch!='\n')
   {
     if(*ch++ == c){
       return (ch-1);
