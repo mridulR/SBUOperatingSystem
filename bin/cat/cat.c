@@ -28,10 +28,6 @@ int main(int argc, char *argv[], char *env[]) {
 
 if (argc >= 1)
 {
-  fputs("aaya", stdout);
-  fputs(argv[0], stdout);
-  fputs(argv[1], stdout);
-
   int fd = open(argv[0], O_RDONLY);
   if (fd < 0) {
     fputs("Failed to open file for reading\n", stdout);
@@ -43,7 +39,6 @@ if (argc >= 1)
   }
 }
 else{
-fputs("H", stdout);
   cat(0,1);
 }
  return 1;
