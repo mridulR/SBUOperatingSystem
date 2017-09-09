@@ -354,8 +354,10 @@ int fclose(FILE *f)
 
 int execvpe(const char *file, char *const argv[], char *const envp[])
 {
+  fputs(envp[0], stdout);
   int retVal = execve(file, argv, envp);
   return retVal;
 }
+
 
 #endif

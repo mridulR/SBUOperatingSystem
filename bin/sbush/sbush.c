@@ -93,7 +93,6 @@ void executeFile(char * file_path) {
 void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
   char *path = getenv("PATH");
   envp[0] = path;
-  envp[0] = "/bin";
   envp[1] = NULL;
   argv[0] = (*c_arg).command;
   int index = 0;
@@ -104,16 +103,12 @@ void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
   
   if(strcmp((*c_arg).command, "rootfs/bin/sbush") != 0)
   {
-    char cmd[100];
-    memset(cmd, '\0', 100);
-    cmd[0] ='/';
-    cmd[1] ='b';
-    cmd[2] ='i';
-    cmd[3] ='n';
-    cmd[4] ='/';
-    memcpy(cmd+5, (*c_arg).command, strlen((*c_arg).command));
-    memcpy((*c_arg).command, cmd, strlen(cmd));
-    memcpy(argv[0], cmd, strlen(cmd));
+    char buf[100];
+    memset(buf, '\0', 100);
+    memcpy(buf, (*c_arg).command, strlen((*c_arg).command));
+    memcpy((*c_arg).command, path, strlen(path));
+    memcpy((*c_arg).command + strlen(path), buf, strlen(buf));
+    *((*c_arg).command + strlen((*c_arg).command)) = '\0';
   }
   else
   {
@@ -141,13 +136,9 @@ void executeBinaryInteractively(commandArgument *c_arg) {
   //int pgid = tcgetpgrp(0);
   int pid = fork();
   if (pid == 0) {
-    /*char* targv[2];
-    targv[0]="/bin/ls\0";
-    targv[1]=NULL;*/
     int status = execvpe(argv[0], argv, envp);
     if (status != 0) {
-      custom_fputs((*c_arg).command, stdout);
-      custom_fputs(": command not found.\n", stdout);
+      custom_fputs("Command not found.\n", stdout);
     }
     exit(0);
   } else {
@@ -448,6 +439,18 @@ void parseAndExecuteCommand(char * input) {
     }
 
 int main(int argc, char *argv[], char *envp[]) {
+  for(int i=0; i<1; ++i)
+  {
+    commandArgument *c_arg = malloc(sizeof(commandArgument)); 
+    (*c_arg).trimmedInput = NULL;
+    (*c_arg).command = malloc((strlen(*envp+i)* sizeof(char))+ 1);
+    memset((*c_arg).command, '\0', strlen(*envp+i)+1);
+    memcpy((*c_arg).command, *envp+i, strlen(*envp+i)); 
+    (*c_arg).arguments[1] = NULL;
+    (*c_arg).isBackground = 0;
+    (*c_arg).argumentCount = 0;
+    executeCommand(c_arg);
+  }
   if (argc == 1) {
     // Run interactively
     char buffer[BUFFER_SIZE];
