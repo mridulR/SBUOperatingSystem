@@ -1,31 +1,34 @@
 #include <unistd.h>
 #include <sys/types.h>
-#include <string.h>
 
+#define MAP_ANONYMOUS 0x20
+#define MAP_PRIVATE 0x02
+#define MAP_SHARED 0x01
+#define PROT_READ 0x1
+#define PROT_WRITE 0x2
+#define PROT_EXEC 0x4
+#define PROT_NONE 0x0
 
 typedef struct {
-  size_t sizeOfBlock;
-  int free;
+  void *addr;
+  int  blockSize;
   struct meta_block * next;
 } meta_block;
 
 meta_block *ROOT = NULL;
 
-meta_block * getNewBlock(size_t size) {
-meta_block * new_meta_block = sbrk(0);
+meta_block * getNewBlock(int len) {
+   //Aloocate the info block
+   meta_block* new_meta_block = 
+        mmap(NULL, sizeof(meta_block)+len, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0); 
+
    if (new_meta_block == NULL) {
-     // sbrek failed so return
+     //Failed to allocate
      return NULL;
    }
-
-   void * new_combined_memory_block = sbrk(size + (size_t) sizeof(meta_block));
-  if (new_combined_memory_block == NULL) {
-    // sbrek failed so return
-    return NULL;
-  }
-
-  new_meta_block->sizeOfBlock = size;
-  new_meta_block->free = 0;
+  
+  new_meta_block->blockSize  = len;
+  new_meta_block->addr = new_meta_block + sizeof(meta_block);
   new_meta_block->next = NULL;
 
   return new_meta_block;
@@ -34,18 +37,6 @@ meta_block * new_meta_block = sbrk(0);
 
 void allocateMemoryWhenListIsEmpty(meta_block ** root, size_t size) {
   *root = getNewBlock(size);
-}
-
-meta_block * getMemoryOfRequisiteSizeFromList(size_t size) {
-  meta_block* trav = ROOT;
-  while (trav != NULL) {
-    if (trav->sizeOfBlock >= size && trav->free == 1) {
-       trav->free = 0;
-       return trav;
-    }
-    trav = (meta_block *)trav->next;
-  }
-  return NULL;
 }
 
 meta_block * getMemoryBlockFromOs(size_t size) {
@@ -59,21 +50,13 @@ void *malloc(int size) {
   if (size <= 0) {  // Invalid Arguments
     return NULL;
   }
-  
   if (ROOT == NULL) {   // List is empty
     allocateMemoryWhenListIsEmpty(&ROOT, size);
-    return (ROOT + 1);
+    return (ROOT->addr);
   }
-
-  meta_block * requisiteBlock = getMemoryOfRequisiteSizeFromList(size);
-
-  if (requisiteBlock != NULL) {
-    return (requisiteBlock + 1);
-  }
- 
   meta_block * last_block = getMemoryBlockFromOs(size);
 
- return (last_block + 1);
+  return (last_block);
 }
 
 void free (void * ptr) {
@@ -81,8 +64,19 @@ void free (void * ptr) {
     // do nothing
     return;
   }
-  meta_block * casted_meta_block = (meta_block *) ptr - 1;
-  if (casted_meta_block != NULL) {
-    casted_meta_block->free = 1;
+
+  meta_block* trav = ROOT;
+  meta_block* prev = NULL;
+  while (trav != NULL) {
+    if(trav->addr == ptr){
+      if(prev != NULL){
+        prev->next = trav->next;
+      }
+      munmap(trav, trav->blockSize+ sizeof(meta_block));
+      return;
+    }
+    prev = trav;
+    trav = (meta_block *)trav->next;
   }
+  return;
 }

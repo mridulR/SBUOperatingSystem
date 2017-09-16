@@ -20,6 +20,7 @@
 #define __NR_close_64 3 
 #define __NR_exit_64 60 
 #define __NR_mmap_64 9 
+#define __NR_munmap_64 11 
 #define __NR_brk_64 12 
 #define __NR_pipe_64 22 
 #define __NR_dup2_64 33
@@ -33,6 +34,7 @@
 #define __NR_getpgrp_64 111
 #define __NR_ioctl_64 16
 #define __NR_brk_64 12 
+#define __NR_lseek_64 8
 
 
 int read(int fd, void *buf, int size)
@@ -272,14 +274,40 @@ int tcsetpgrp(int fd, int pgrp)
   return ret;
 }
 
-int brk(void *addr)
+void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
+{
+  void* ret;
+  __asm__ __volatile__
+  (
+      "syscall"
+      :"=a" (ret)
+      :"0"(__NR_mmap_64), "b" (addr), "c" (length), "d" (prot), "g" (flags), "g" (fd), "g" (offset)
+      :"cc"
+  );
+  return ret;
+}
+
+int munmap(void *addr, int length)
 {
   int ret;
   __asm__ __volatile__
   (
       "syscall"
       :"=a" (ret)
-      :"0"(__NR_brk_64), "b" (addr)
+      :"0"(__NR_munmap_64), "b" (addr), "c" (length)
+      :"cc"
+  );
+  return ret;
+}
+
+off_t lseek(int fd, off_t offset, int whence)
+{
+  long int ret;
+  __asm__ __volatile__
+  (
+      "syscall"
+      :"=a" (ret)
+      :"0"(__NR_lseek_64), "b" (fd), "c" (offset), "d" (whence)
       :"cc"
   );
   return ret;
@@ -341,14 +369,10 @@ int fclose(FILE *f)
 
 int execvpe(const char *file, char *const argv[], char *const envp[])
 {
+  fputs(envp[0], stdout);
   int retVal = execve(file, argv, envp);
   return retVal;
 }
 
-//TODO: Add the brk logic here.
-/*void *sbrk(intptr_t increment)
-{
-    
-}*/
 
 #endif

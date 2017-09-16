@@ -29,15 +29,16 @@ int mkdir(const char *pathname, mode_t mode);
 // OPTIONAL: implement for ``signals and pipes (+10 pts)''
 int pipe(int pipefd[2]);
 
-void *sbrk(intptr_t increment);
+void *sbrk(void* addr);
 
 FILE *fopen(const char *path, const char *mode);
 
 int fclose(FILE *f);
 
-//TODO: fill this function
-char *getenv(const char *name) { return NULL;}
-int setenv(const char *name, const char *value, int overwrite) { return 0;}
+char *getenv(const char *name);
+int setenv(const char *name, const char *value, int overwrite);
 
+void *mmap(void *addr, int length, int prot, int flags, int fd, int offset);
+int munmap(void *addr, int length);
 
 #endif

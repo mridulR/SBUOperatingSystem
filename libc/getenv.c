@@ -8,7 +8,7 @@ typedef struct environ_data {
 } ENVIRON_DATA;
 
 
- void * malloc(size_t size);
+void * malloc(size_t size);
 extern ENVIRON_DATA *environ_vars[ENVIRON_DATA_SIZE];
 
 ENVIRON_DATA *environ_vars[] = {};
@@ -30,7 +30,9 @@ int setenv(char * key, char * value, int mode) {
     for (int index = 0; index < ENVIRON_DATA_SIZE; index++) {
       if(environ_vars[index] == NULL) {
         environ_vars[index] = (ENVIRON_DATA *) malloc(sizeof(ENVIRON_DATA));
-        environ_vars[index]->key = key;
+        environ_vars[index]->key = (char *)malloc(strlen(key)+1); 
+        memset(environ_vars[index]->key, '\0', strlen(key)+1);
+        memcpy(environ_vars[index]->key, key, strlen(key));
         environ_vars[index]->value = value;
         return 0;
       }		
@@ -41,7 +43,9 @@ int setenv(char * key, char * value, int mode) {
     for (int index = 0; index < ENVIRON_DATA_SIZE; index++) {
       if (environ_vars[index] == NULL) {
         environ_vars[index] = (ENVIRON_DATA *)malloc(sizeof(ENVIRON_DATA));
-        environ_vars[index]->key = key;
+        environ_vars[index]->key = (char *)malloc(strlen(key)+1); 
+        memset(environ_vars[index]->key, '\0', strlen(key)+1);
+        memcpy(environ_vars[index]->key, key, strlen(key));
         environ_vars[index]->value = value;
         return 0;
       } else {
@@ -58,4 +62,3 @@ int setenv(char * key, char * value, int mode) {
    return -1;
   } 
 }
-

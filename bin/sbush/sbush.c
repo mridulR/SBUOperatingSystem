@@ -40,6 +40,55 @@ void waitForProcessExecution(int pid) {
       } while (!WIFEXITED(waitStatus) && !WIFSIGNALED(waitStatus));
 }
 
+void parseAndExecuteCommand(char * input);
+ 
+void executeFile(char * file_path) {
+  FILE * fp = fopen(file_path, "r");
+  char line[150];
+  char * newLine = malloc(150 * sizeof(char));
+  memset(newLine, '\0', 150 * sizeof(char));
+  char *path = getenv("PATH");
+  char *envp[] = {path, NULL};
+  int isSbush = 0;
+  char * currentLine = fgets(line, sizeof(line), fp);
+  currentLine[strlen(currentLine) - 1] = '\0';
+  if(strcmp(currentLine, "#!rootfs/bin/sbush\0") == 0){
+    isSbush = 1;    
+  }
+  fclose(fp);
+  // Hacky way of reading file with fgets as it was getting random characters in buffer.
+  if(line[0] == '#' && line[1] == '!') {
+    if(isSbush)
+    {
+      FILE *fp1 = fopen(file_path, "r");
+      currentLine = fgets(line, sizeof(line), fp1);
+      while(1) {
+        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
+          break;
+        }
+        memset(line, '\0', sizeof(line));
+        currentLine = fgets(line, sizeof(line), fp1);
+        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
+          // do nothing
+        } else {
+           parseAndExecuteCommand(currentLine);
+        }
+     } 
+     fclose(fp1);
+    }
+    else{
+      char *argv[3];
+      argv[0] = line + 2;
+      argv[1] = file_path;
+      argv[2] = NULL;
+      int status = execvpe( line + 2, argv, envp);
+      if (status != 0) {
+        custom_fputs("Error while executing other shell \n", stdout);
+      }
+    }
+  }
+}
+
 
 void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
   char *path = getenv("PATH");
@@ -47,10 +96,25 @@ void setExecutionArguments(char *envp[], char *argv[], commandArgument *c_arg) {
   envp[1] = NULL;
   argv[0] = (*c_arg).command;
   int index = 0;
-  for (; index < (*c_arg).argumentCount; index++) {
+  for (; index <= (*c_arg).argumentCount; index++) {
    argv[index + 1] = (*c_arg).arguments[index];
   }
   argv[index + 1] = NULL;
+  
+  if((strcmp((*c_arg).command, "rootfs/bin/sbush") != 0) && 
+     (strcmp((*c_arg).command, "rootfs/bin/cat") != 0))
+  {
+    char buf[100];
+    memset(buf, '\0', 100);
+    memcpy(buf, (*c_arg).command, strlen((*c_arg).command));
+    memcpy((*c_arg).command, path, strlen(path));
+    memcpy((*c_arg).command + strlen(path), buf, strlen(buf));
+    *((*c_arg).command + strlen((*c_arg).command)) = '\0';
+  }
+  else
+  {
+    executeFile((*c_arg).arguments[0]);
+  }
 }
 
 void executeBinaryInBackGround(commandArgument *c_arg) {
@@ -69,18 +133,19 @@ void executeBinaryInteractively(commandArgument *c_arg) {
   char *envp[2];
   char *argv[(*c_arg).argumentCount + 2];
   setExecutionArguments(envp, argv, c_arg);
-  int pgid = tcgetpgrp(0);
+  // TODO: FIX syscall first then uncomment this
+  //int pgid = tcgetpgrp(0);
   int pid = fork();
   if (pid == 0) {
-    int status = execvpe((*c_arg).command, argv, envp);
+    int status = execvpe(argv[0], argv, envp);
     if (status != 0) {
-      custom_fputs((*c_arg).command, stdout);
-      custom_fputs(": command not found.\n", stdout);
+      custom_fputs("Command not found.\n", stdout);
     }
     exit(0);
   } else {
       waitForProcessExecution(pid);
-      tcsetpgrp(0, pgid); 
+      // TODO: FIX syscall first then uncomment this
+      //tcsetpgrp(0, pgid); 
   }
 }
 
@@ -100,11 +165,11 @@ void executeBuiltInPwd(commandArgument *c_arg) {
   custom_fputs("\n", stdout);
   return;
  }
-  char cwd[1024];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-   custom_fputs(cwd, stdout);
-   custom_fputs("\n", stdout);
-  }
+ char cwd[1024];
+ memset(cwd,'\0', 1024);
+ getcwd(cwd, 1024);
+ custom_fputs(cwd, stdout);
+ custom_fputs("\n", stdout);
 }
 
 void executeBuiltInEcho(commandArgument *c_arg)
@@ -238,7 +303,7 @@ void printParsedCommand(commandArgument * c_Arg) {
 }
 
 void custom_fputs(char * chr, FILE * out) {
- if (chr != NULL) {
+ if (chr != '\0') {
    fputs(chr, out);
  }
 }
@@ -275,7 +340,7 @@ void runPiping(commandArgument *c_Args[], int numberOfCommands, int currentComma
         case 0:
            close(fd[0]);
            duplicateFileDescriptorsFromInputToOutput(file_desc, 0);
-	   duplicateFileDescriptorsFromInputToOutput(fd[1], 1);
+	       duplicateFileDescriptorsFromInputToOutput(fd[1], 1);
            executeBinary(c_Args[currentCommandIndex]);
            gracefulExit("execvp");
         default:
@@ -343,10 +408,12 @@ void parseAndExecuteCommand(char * input) {
        commandArgument *c_Args[numOfPipes + 1];
        parsePipeCommand(c_Args, numOfPipes, input);
        if (isValidateParsedPipeInput(c_Args, numOfPipes)) {
-         if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+         //TODO: Let's see how to fix it later on.
+         /*if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
                 gracefulExit("signal");
          }
-         int pgid = tcgetpgrp(0);
+         // TODO: FIX syscall first then uncomment this
+         int pgid = tcgetpgrp(0);*/
          int c_pid = fork();
          switch(c_pid) {
           case 0:
@@ -354,7 +421,8 @@ void parseAndExecuteCommand(char * input) {
             exit(0);
           default:
             waitForProcessExecution(c_pid);
-            tcsetpgrp(0, pgid); 
+            // TODO: FIX syscall first then uncomment this
+            //tcsetpgrp(0, pgid); 
          }
         } else {
            custom_fputs("Invalid pipe syntex. Try Again", stdout);
@@ -371,59 +439,25 @@ void parseAndExecuteCommand(char * input) {
       }
     }
 
-void executeFile(char * file_path) {
-  FILE * fp = fopen(file_path, "r");
-  char line[150];
-  char * newLine = malloc(150 * sizeof(char));
-  memset(newLine, '\0', 150 * sizeof(char));
-  char *path = getenv("PATH");
-  char *envp[] = {path, NULL};
-  int isSbush = 0;
-  char * currentLine = fgets(line, sizeof(line), fp);
-  currentLine[strlen(currentLine) - 1] = '\0';
-  if(strcmp(currentLine, "#!rootfs/bin/sbush\0") == 0){
-    isSbush = 1;    
-  }
-  fclose(fp);
-  // Hacky way of reading file with fgets as it was getting random characters in buffer.
-  if(line[0] == '#' && line[1] == '!') {
-    if(isSbush)
-    {
-      FILE *fp1 = fopen(file_path, "r");
-      currentLine = fgets(line, sizeof(line), fp1);
-      while(1) {
-        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
-          break;
-        }
-        memset(line, '\0', sizeof(line));
-        currentLine = fgets(line, sizeof(line), fp1);
-        if (currentLine == NULL || strlen(currentLine) == 0 || *currentLine == '\0' || *currentLine == '\n') {
-          // do nothing
-        } else {
-           parseAndExecuteCommand(currentLine);
-        }
-     } 
-     fclose(fp1);
-    }
-    else{
-      char *argv[3];
-      argv[0] = line + 2;
-      argv[1] = file_path;
-      argv[2] = NULL;
-      int status = execvpe( line + 2, argv, envp);
-      if (status != 0) {
-        custom_fputs("Error while executing other shell \n", stdout);
-      }
-    }
-  }
-}
-
 int main(int argc, char *argv[], char *envp[]) {
+  for(int i=0; i<1; ++i)
+  {
+    commandArgument *c_arg = malloc(sizeof(commandArgument)); 
+    (*c_arg).trimmedInput = NULL;
+    (*c_arg).command = malloc((strlen(*envp+i)* sizeof(char))+ 1);
+    memset((*c_arg).command, '\0', strlen(*envp+i)+1);
+    memcpy((*c_arg).command, *envp+i, strlen(*envp+i)); 
+    (*c_arg).arguments[1] = NULL;
+    (*c_arg).isBackground = 0;
+    (*c_arg).argumentCount = 0;
+    executeCommand(c_arg);
+  }
   if (argc == 1) {
     // Run interactively
     char buffer[BUFFER_SIZE];
     while (TRUE) {
       custom_fputs(PS1, stdout);
+      memset(buffer, '\0', BUFFER_SIZE);
       char * input = fgets(buffer, BUFFER_SIZE, stdin);
       if (input == NULL || *input == '\n') {
         continue;
@@ -436,7 +470,7 @@ int main(int argc, char *argv[], char *envp[]) {
       parseAndExecuteCommand(input);
     }
   } 
-  else {
+  else if( argc > 1){
     // Run script  ====>  only supporting sbush <filename> with no space after shabang #!<path_to_executor>
     executeFile(argv[1]);
   }

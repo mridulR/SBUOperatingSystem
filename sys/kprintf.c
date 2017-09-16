@@ -7,7 +7,6 @@ char* HandleSignedInt(const int i_argVal, char* currAddr);
 char* HandleAddress(uint64_t addr, char* currAddr);
 char* HandleUnsignedInt(unsigned int u_argVal, char* currAddr);
 
-
 void kprintf(const char *fmt, ...)
 {
 
@@ -64,7 +63,6 @@ char* HandleString(char* str, char* currAddr) {
   return currAddr;
 }
 
-
 char* HandleSignedInt(const int i_argVal, char* currAddr) {
   int num = i_argVal;
   const int zeroHex = 0x30;
@@ -88,7 +86,6 @@ char* HandleSignedInt(const int i_argVal, char* currAddr) {
   }
   return currAddr;
 }
-
 
 char* HandleAddress(uint64_t addr, char* currAddr){
 

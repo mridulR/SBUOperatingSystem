@@ -10,7 +10,6 @@
 #define SA_NOCLDWAIT  0x00000002
 
 
-
 typedef unsigned long  uint64_t;
 typedef          long   int64_t;
 typedef unsigned int   uint32_t;
@@ -38,19 +37,9 @@ struct __sFile
 
 typedef struct __sFile FILE;
 
+extern int fileno(FILE*);
+
 typedef uint32_t __uid_t;
 typedef uint32_t __uid_t;
 
-int fileno (FILE *fp)
-{
-  return (fp->fd);
-}
-
-
-#define _NIOBRW 16
-extern FILE _iob[_NIOBRW];
-
-#define stdin   (&_iob[0])
-#define stdout  (&_iob[1])
-#define stderr  (&_iob[2])
 #endif
