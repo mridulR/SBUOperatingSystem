@@ -1,36 +1,14 @@
 #include <sys/kprintf.h>
-#include <sys/defs.h>
+#include <sys/types.h>
 #include <stdarg.h>
-
-void kdprintf(char *fmt, ...);
-
-//void kprintf(const char *fmt, ...)
-void kprintf()
-{
-    const char* str= "Hello!!!";
-    char *vstart = (char*)0xb8000;
-    while( *str !=0){
-        *vstart++ = *str++;
-        *vstart++ = 0x07;
-    }
-    /*char *str2 = "Roku";
-    kdprintf("%p", &str2);*/
-}
 
 char* HandleString(char* str, char* currAddr);
 char* HandleSignedInt(const int i_argVal, char* currAddr);
 char* HandleAddress(uint64_t addr, char* currAddr);
 char* HandleUnsignedInt(unsigned int u_argVal, char* currAddr);
 
-void kdprintf(char *fmt, ...) {
-
-    // Listing the default values for different types.
-    /*int   dIntVal  = 1;
-    char* dPtrVal  = 0x1;
-    char  dCharVal = 0;*/
-
-    char* baseAddr = (char *)0xb8000; 
-    char* currAddr = baseAddr;
+void kprintf(const char *fmt, ...)
+{
 
     char c, *str;
     int i_argVal;
@@ -40,8 +18,9 @@ void kdprintf(char *fmt, ...) {
 
     va_start(apList, fmt);
     while (*fmt) {
-      if(*fmt++ == '%') {
-        switch (*fmt++) {
+      if(*fmt == '%') {
+        fmt++;
+        switch (*fmt) {
           case 's':
               str = va_arg(apList, char *);
               currAddr = HandleString(str, currAddr);
@@ -68,13 +47,13 @@ void kdprintf(char *fmt, ...) {
         }
       }
       if(*fmt!='%'){
-        //printf("%c", *fmt);
-        *currAddr++ = *fmt;
+        *currAddr++ = *fmt++;
         *currAddr++ = 0x07;
       }
     }
     va_end(apList);
 }
+
 char* HandleString(char* str, char* currAddr) {
   while(*str != 0){
       //printf("%c", *str++);
