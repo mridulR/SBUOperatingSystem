@@ -13,8 +13,8 @@ void kprintf()
         *vstart++ = *str++;
         *vstart++ = 0x07;
     }
-    char *str2 = "Roku";
-    kdprintf("%p", &str2);
+    /*char *str2 = "Roku";
+    kdprintf("%p", &str2);*/
 }
 
 char* HandleString(char* str, char* currAddr);

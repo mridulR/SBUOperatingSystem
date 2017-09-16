@@ -3,8 +3,13 @@
 #include <sys/kprintf.h>
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
+#include <sys/idt.h>
 
+#define true 1
 #define INITIAL_STACK_SIZE 4096
+
+extern Idtr s_Idtr;
+
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
@@ -25,6 +30,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   // TODO: uncomment below line
   //kprintf("physfree %p\n", (uint64_t)physfree);
   //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  test_interrupt_zero();
+  while(true) {
+  }
 }
 
 void boot(void)
@@ -43,12 +51,21 @@ void boot(void)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
   init_gdt();
+  
+  // Disable the interrupts
+  disable_Interrupts();
+
+  // Initialize IDT and load the Idtr
+  init_Idt();
+  
+  // Enable the interrupts
+  enable_Interrupts();
+
   start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
     (uint64_t*)&physbase,
     (uint64_t*)(uint64_t)loader_stack[4]
   );
-  kprintf();
   // TODO: uncomment below line
   /*for(
     temp1 = "!!!!! start() returned !!!!!", temp2 = (char*)0xb8000;
