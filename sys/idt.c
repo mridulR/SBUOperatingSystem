@@ -31,7 +31,7 @@ void enable_Interrupts() {
   //Disable ISR's first
   __asm__ __volatile__
   (
-    "cli"
+    "sti"
   );
   return;  
 }
@@ -40,7 +40,7 @@ void disable_Interrupts() {
   //Disable ISR's first
   __asm__ __volatile__
   (
-    "sti"
+    "cli"
   );
   return;  
 }
