@@ -32,6 +32,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   }
   kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+
+  test_interrupt_zero();
   while(1) {
   }
 }
@@ -51,9 +53,6 @@ void boot(void)
   );
   init_gdt();
   
-  // Disable the interrupts
-  disable_Interrupts();
-
   // Initialize IDT and load the Idtr
   init_Idt();
   

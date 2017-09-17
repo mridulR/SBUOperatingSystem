@@ -4,13 +4,14 @@
 
 .text
 
-.global default_interrupt_service_routine
-default_interrupt_service_routine:
+.global interrupt_service_routine_wrapper
+interrupt_service_routine_wrapper:
+  push %rsp
+  push %rbp
   push %rax
   push %rcx
   push %rdx
   push %rbx
-  push %rbp
   push %rsi
   push %rdi
   push %r10
@@ -19,14 +20,13 @@ default_interrupt_service_routine:
   push %r13
   push %r14
   push %r15
-  mov $0x20, %al
-  mov $0x20, %dx
-  out %al, %dx
+  call default_interrupt_service_routine
+  pop %rsp
+  pop %rbp
   pop %rax 
   pop %rcx
   pop %rdx
   pop %rbx
-  pop %rbp
   pop %rsi
   pop %rdi
   pop %r10

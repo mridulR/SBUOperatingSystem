@@ -15,14 +15,14 @@ struct idtd{
     uint16_t offset_2;
     uint32_t offset_3;
     uint32_t zero;
-};
+}__attribute__((packed));
 
 typedef struct idtd Idtd;
 
 struct idtr {
     uint16_t limit;
     uint64_t base;
-};
+}__attribute__((packed));
 
 typedef struct idtr Idtr;
 

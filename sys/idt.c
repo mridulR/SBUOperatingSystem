@@ -17,7 +17,7 @@ void *memset(void *s, int c, int n)
 //                  without misfeasance using the ARPL (Adjust Requested Privilege Level) instruction.
 // TI	 BIT 2	    Table index; 0 = GDT, 1 = LDT
 // Index BIT 3..15	Index to a Descriptor of the table.
-#define IDT_SELECTOR 0x0000000000001000
+#define IDT_SELECTOR 0x8
 
 //32-bit Interrupt gate: 0x8E ( P=1, DPL=00b, S=0, type=1110b => type_attr=1000_1110b=0x8E)
 #define INTERRUPT_GATE_TYPE_ATTR 0x8E
@@ -46,7 +46,9 @@ void disable_Interrupts() {
 }
 
 
-void default_interrupt_service_routine(); 
+void default_interrupt_service_routine(){
+  __asm__ __volatile__("iretq\n");
+}
 
 // Initializes IDT and IDTR
 void init_Idt() {
@@ -55,12 +57,12 @@ void init_Idt() {
   // The caller must disable ISR's first before invoking this and enable after init_Idt()
   // Initialize the idt structure
   // TODO: Currently we install the same IH for all. Change this later after basic things work.
-  s_Idtr.limit = (MAX_NUM_INTERRUPTS * sizeof(Idtd));
+  s_Idtr.limit = (sizeof(Idtd) * MAX_NUM_INTERRUPTS- 1);
   s_Idtr.base = (uint64_t)&s_Idtd[0];
   
   kprintf("s_idtr: lim (%d) base(%p)", s_Idtr.limit, s_Idtr.base);
 
-  memset(&s_Idtd[0], 0, sizeof(Idtd) * MAX_NUM_INTERRUPTS);
+  memset(&s_Idtd[0], 0, sizeof(Idtd) * MAX_NUM_INTERRUPTS - 1);
 
   for(int i = 0; i< MAX_NUM_INTERRUPTS; ++i){
       set_interrupt_service_routine(i, INTERRUPT_GATE_TYPE_ATTR, default_interrupt_service_routine);
@@ -83,14 +85,14 @@ void set_interrupt_service_routine(uint32_t interrupt_service_num, uint8_t type,
   uint64_t addr = (uint64_t)interrupt_service_routine;
 
   s_Idtd[interrupt_service_num].offset_1 = (uint16_t)(addr & 0xffff); 
-  s_Idtd[interrupt_service_num].selector = IDT_SELECTOR;
+  s_Idtd[interrupt_service_num].selector = (uint16_t)IDT_SELECTOR;
   s_Idtd[interrupt_service_num].ist = 0;
-  s_Idtd[interrupt_service_num].type = type;
+  s_Idtd[interrupt_service_num].type = (uint8_t)type;
   s_Idtd[interrupt_service_num].offset_2 = (uint16_t)((addr >> 16) & 0xffff);
   s_Idtd[interrupt_service_num].offset_3 = (uint32_t)((addr >> 32) & 0xffffffff);
 
   s_Idtd[interrupt_service_num].zero = 0;
-  kprintf("size(Addr) (%d) addr (%p) offset(%d) selector(%d) ist(%d) type(%d) offset_2(%d) offset_3(%d) zero (%d)", sizeof(&(*interrupt_service_routine)), &interrupt_service_routine, s_Idtd[interrupt_service_num].offset_1, s_Idtd[interrupt_service_num].selector, s_Idtd[interrupt_service_num].ist, s_Idtd[interrupt_service_num].type, s_Idtd[interrupt_service_num].offset_2, s_Idtd[interrupt_service_num].offset_3, s_Idtd[interrupt_service_num].zero);
+  //kprintf("size(Addr) (%d) addr (%p) offset(%d) selector(%d) ist(%d) type(%d) offset_2(%d) offset_3(%d) zero (%d)", sizeof(&(*interrupt_service_routine)), &interrupt_service_routine, s_Idtd[interrupt_service_num].offset_1, s_Idtd[interrupt_service_num].selector, s_Idtd[interrupt_service_num].ist, s_Idtd[interrupt_service_num].type, s_Idtd[interrupt_service_num].offset_2, s_Idtd[interrupt_service_num].offset_3, s_Idtd[interrupt_service_num].zero);
 }
 
 
