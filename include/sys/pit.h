@@ -53,7 +53,4 @@ void init_pit();
 //! Gets the global pit counter 
 uint32_t get_pit_count();
 
-//! start the counter for pit
-void pit_start_count();
-
 #endif

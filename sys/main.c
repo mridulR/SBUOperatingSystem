@@ -18,7 +18,6 @@ extern char kernmem, physbase;
 
 char *currAddr = (char *) BASE_ADDR;
 
-
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
 
@@ -36,6 +35,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
   test_interrupt_zero();
+  //__asm__ __volatile__ ("int $0");
   while(1) {
   }
 }
@@ -63,13 +63,11 @@ void boot(void)
 
   // Initialize the PIT
   init_pit();
-
+  //TODO: Think more on outportb ? What's the best place to end interrupt ?
+  //outportb(0x20, 0x20);
   // Start the timer 
-  /*pit_start_count();*/
-   
-  // Enable the interrupts
   enable_Interrupts();
-
+  
   start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
     (uint64_t*)&physbase,

@@ -180,7 +180,7 @@ void end_of_interrupt(uint8_t interruptNum) {
   else if(interruptNum >= 8) {
   // We must send end of interrupt request to slave only when req num is equal
   // or more than 8
-    write_command_word_to_pic(PIC_EOI, SLAVE_PIC_ID);
+  write_command_word_to_pic(PIC_EOI, SLAVE_PIC_ID);
   }
   // We must always send end of interrupt request to master
   write_command_word_to_pic(PIC_EOI, MASTER_PIC_ID);

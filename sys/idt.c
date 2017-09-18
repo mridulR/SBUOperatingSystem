@@ -51,20 +51,17 @@ void helper_interrupt_service_routine() {
   kprintf("Hello World !!!");
 }
 void default_interrupt_service_routine();
-  /*pushad();
-  popad(); */
 
 // Initializes IDT and IDTR
 void init_Idt() {
   
-  kprintf("Within Idt_init()");
   // The caller must disable ISR's first before invoking this and enable after init_Idt()
   // Initialize the idt structure
   // TODO: Currently we install the same IH for all. Change this later after basic things work.
   s_Idtr.limit = (sizeof(Idtd) * MAX_NUM_INTERRUPTS - 1);
   s_Idtr.base = (uint64_t)&s_Idtd[0];
   
-  kprintf("s_idtr: lim (%d) base(%p)", s_Idtr.limit, s_Idtr.base);
+  kprintf("s_idtr: lim (%d) base(%p)\n", s_Idtr.limit, s_Idtr.base);
 
   memset(&s_Idtd[0], 0, sizeof(Idtd) * MAX_NUM_INTERRUPTS - 1);
 
@@ -96,7 +93,6 @@ void set_interrupt_service_routine(uint32_t interrupt_service_num, uint8_t type,
   s_Idtd[interrupt_service_num].offset_3 = (uint32_t)((addr >> 32) & 0xffffffff);
 
   s_Idtd[interrupt_service_num].zero = 0;
-  //kprintf("size(Addr) (%d) addr (%p) offset(%d) selector(%d) ist(%d) type(%d) offset_2(%d) offset_3(%d) zero (%d)", sizeof(&(*interrupt_service_routine)), &interrupt_service_routine, s_Idtd[interrupt_service_num].offset_1, s_Idtd[interrupt_service_num].selector, s_Idtd[interrupt_service_num].ist, s_Idtd[interrupt_service_num].type, s_Idtd[interrupt_service_num].offset_2, s_Idtd[interrupt_service_num].offset_3, s_Idtd[interrupt_service_num].zero);
 }
 
 
