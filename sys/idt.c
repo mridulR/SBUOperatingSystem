@@ -1,6 +1,18 @@
 #include <sys/idt.h>
 #include <sys/kprintf.h>
 #include <sys/types.h>
+#include <sys/asm_util.h>
+
+/* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
+                       changed. Also system calls can be executed in userspace (ring 3, see this) 
+                       without misfeasance using the ARPL (Adjust Requested Privilege Level) instruction.
+   TI     BIT 2        Table index; 0 = GDT, 1 = LDT
+   Index  BIT 3..15    Index to a Descriptor of the table. 
+*/
+#define IDT_SELECTOR 0x8
+
+//32-bit Interrupt gate: 0x8E ( P=1, DPL=00, S=0, type=1110 => type_attr=1000_1110=0x8E)
+#define INTERRUPT_GATE_TYPE_ATTR 0x8E
 
 void *memset(void *s, int c, int n)
 {
@@ -11,16 +23,6 @@ void *memset(void *s, int c, int n)
     }
     return s;
 }
-
-// RPL	 BIT 0, 1	Requested Privilege Level. The CPU checks these bits before any selector is
-//                  changed. Also system calls can be executed in userspace (ring 3, see this) 
-//                  without misfeasance using the ARPL (Adjust Requested Privilege Level) instruction.
-// TI	 BIT 2	    Table index; 0 = GDT, 1 = LDT
-// Index BIT 3..15	Index to a Descriptor of the table.
-#define IDT_SELECTOR 0x8
-
-//32-bit Interrupt gate: 0x8E ( P=1, DPL=00b, S=0, type=1110b => type_attr=1000_1110b=0x8E)
-#define INTERRUPT_GATE_TYPE_ATTR 0x8E
 
 // Initilizing the IDT structure
 static Idtr __attribute__((used)) s_Idtr = {0};
@@ -45,10 +47,12 @@ void disable_Interrupts() {
   return;  
 }
 
-
-void default_interrupt_service_routine(){
-  __asm__ __volatile__("iretq\n");
+void helper_interrupt_service_routine() {
+  kprintf("Hello World !!!");
 }
+void default_interrupt_service_routine();
+  /*pushad();
+  popad(); */
 
 // Initializes IDT and IDTR
 void init_Idt() {
@@ -57,7 +61,7 @@ void init_Idt() {
   // The caller must disable ISR's first before invoking this and enable after init_Idt()
   // Initialize the idt structure
   // TODO: Currently we install the same IH for all. Change this later after basic things work.
-  s_Idtr.limit = (sizeof(Idtd) * MAX_NUM_INTERRUPTS- 1);
+  s_Idtr.limit = (sizeof(Idtd) * MAX_NUM_INTERRUPTS - 1);
   s_Idtr.base = (uint64_t)&s_Idtd[0];
   
   kprintf("s_idtr: lim (%d) base(%p)", s_Idtr.limit, s_Idtr.base);

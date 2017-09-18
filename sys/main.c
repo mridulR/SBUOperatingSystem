@@ -4,6 +4,8 @@
 #include <sys/tarfs.h>
 #include <sys/ahci.h>
 #include <sys/idt.h>
+#include <sys/pic.h>
+#include <sys/pit.h>
 
 #define true 1
 #define INITIAL_STACK_SIZE 4096
@@ -55,7 +57,16 @@ void boot(void)
   
   // Initialize IDT and load the Idtr
   init_Idt();
-  
+
+  // Initialize the PIC 
+  init_pic(PROT_MODE_MASTER_PIC_VECTOR_OFFSET, PROT_MODE_SLAVE_PIC_VECTOR_OFFSET);
+
+  // Initialize the PIT
+  init_pit();
+
+  // Start the timer 
+  /*pit_start_count();*/
+   
   // Enable the interrupts
   enable_Interrupts();
 
