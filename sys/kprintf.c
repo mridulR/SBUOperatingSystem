@@ -64,6 +64,12 @@ void printTime(unsigned int time) {
   *currAddr++ = 0x07;
 }
 
+void printKeypress(char keypress, char * address) {
+  char *temp = address;
+  *temp++ = keypress;
+  *temp++ = 0x07;
+}
+
 void kprintf(const char *fmt, ...)
 {
 
@@ -121,6 +127,7 @@ void HandleEverythingElse(char fmt, char* currAddr) {
 
 void HandleChar(char ch, char* currAddr) {
   *currAddr++ = ch;
+  *currAddr++ = 0x07;
   UpdateHeightWidth(currAddr);
 }
 
