@@ -19,9 +19,28 @@ extern char kernmem, physbase;
 
 uint64_t current_width = 0;
 uint64_t current_height = 0;
-char *TIME_ADDRESS     = (char *)(BASE_ADDR + ((160 * 24) + 120));
-char *CTRL_KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 1));
-char *KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 3));
+char *TIME_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 120));
+char *KEYPRESS_BANNER = (char *)(BASE_ADDR + ((160 * 24) + 0));
+char *CTRL_KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 21));
+char *KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 23));
+
+
+void setUpWelcomeScreen() {
+  char *trav = TIME_ADDRESS - 16;
+  char *TIME_STRING = "Time :\0";
+  while(*TIME_STRING != '\0') {
+    *trav++ = *TIME_STRING++;
+    *trav++ = 0x07;
+  }
+  
+  char *KEYPRESS_STRING = "Key Press :\0";
+  trav = KEYPRESS_BANNER;
+  while(*KEYPRESS_STRING != '\0') {
+    *trav++ = *KEYPRESS_STRING++;
+    *trav++ = 0x07;
+  }
+}
+
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -38,6 +57,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   }
   kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  
+  // formatting welcome screen
+  setUpWelcomeScreen();
 
   while(1) {
   }
