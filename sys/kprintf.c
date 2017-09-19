@@ -46,13 +46,22 @@ void UpdateHeightWidth(char * currAddr) {
 }
 
 void printTime(unsigned int time) {
-  /*char *block = TIME_ADDRESS;
-  while(*fmt != '\0') {
-   *block++ = *fmt++;
-   *block++ = 0x07;
+  char *currAddr = TIME_ADDRESS;
+  unsigned int num = time;
+  const unsigned int zeroHex = 0x30;
+  char ch[100] = {0};
+  int numdigits = 0;
+
+  while(num > 0) {
+    ch[numdigits++] = num % 10;
+    num=num/10;
   }
-  */ 
-  HandleUnsignedInt(time, TIME_ADDRESS);
+  for(int i = numdigits-1; i >= 0; --i) {
+      *currAddr++ = (zeroHex + ch[i]);
+      *currAddr++ = 0x07;
+  }
+  *currAddr++ = 's';
+  *currAddr++ = 0x07;
 }
 
 void kprintf(const char *fmt, ...)

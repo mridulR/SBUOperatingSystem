@@ -20,6 +20,7 @@ extern void outportb(uint16_t port, uint8_t val);
 void pit_interrupt_service_routine();
 
 static uint32_t g_pit_count = 0;
+static uint64_t time_in_sec = 1;
 
 uint32_t get_pit_count() {
   return g_pit_count;
@@ -27,7 +28,10 @@ uint32_t get_pit_count() {
 
 void helper_calculate_timer() {
   ++g_pit_count; 
-  printTime(g_pit_count);
+  if(g_pit_count % 35 == 0) {
+    ++time_in_sec;
+    printTime(time_in_sec/100);
+  }
   outportb(0x20, 0x20);
 }
 
