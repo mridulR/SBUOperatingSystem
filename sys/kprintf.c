@@ -46,13 +46,13 @@ void UpdateHeightWidth(char * currAddr) {
 }
 
 void printTime(unsigned int time) {
-  /*char *block = TIME_ADDRESS;
-  while(*fmt != '\0') {
-   *block++ = *fmt++;
-   *block++ = 0x07;
-  }
-  */ 
   HandleUnsignedInt(time, TIME_ADDRESS);
+}
+
+void printKeypress(char keypress, char * address) {
+  char *temp = address;
+  *temp++ = keypress;
+  *temp++ = 0x07;
 }
 
 void kprintf(const char *fmt, ...)
@@ -112,6 +112,7 @@ void HandleEverythingElse(char fmt, char* currAddr) {
 
 void HandleChar(char ch, char* currAddr) {
   *currAddr++ = ch;
+  *currAddr++ = 0x07;
   UpdateHeightWidth(currAddr);
 }
 

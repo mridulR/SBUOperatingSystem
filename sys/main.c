@@ -6,6 +6,7 @@
 #include <sys/idt.h>
 #include <sys/pic.h>
 #include <sys/pit.h>
+#include <sys/ps2Controller.h>
 
 #define true 1
 #define INITIAL_STACK_SIZE 4096
@@ -18,7 +19,9 @@ extern char kernmem, physbase;
 
 uint64_t current_width = 0;
 uint64_t current_height = 0;
-char *TIME_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 120));
+char *TIME_ADDRESS     = (char *)(BASE_ADDR + ((160 * 24) + 120));
+char *CTRL_KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 1));
+char *KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 3));
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -67,7 +70,9 @@ void boot(void)
   //outportb(0x20, 0x20);
   // Start the timer 
   //enable_Interrupts();
-  
+ 
+  init_ps2_controller();
+
   start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
     (uint64_t*)&physbase,
