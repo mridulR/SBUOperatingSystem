@@ -27,8 +27,6 @@ uint32_t get_pit_count() {
 
 void helper_calculate_timer() {
   ++g_pit_count; 
-  //TODO: Fix me
-  //kprintf("%d\n", g_pit_count);
   printTime(g_pit_count);
   outportb(0x20, 0x20);
 }

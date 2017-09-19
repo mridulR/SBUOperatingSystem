@@ -50,6 +50,7 @@ void disable_Interrupts() {
 void helper_interrupt_service_routine() {
   __asm__ __volatile__ ( "iretq");
 }
+
 void default_interrupt_service_routine();
 
 // Initializes IDT and IDTR

@@ -6,7 +6,6 @@
 
 .global default_interrupt_service_routine 
 default_interrupt_service_routine:
-  push %rbp
   push %rax
   push %rcx
   push %rdx
@@ -19,6 +18,7 @@ default_interrupt_service_routine:
   push %r13
   push %r14
   push %r15
+  push %rbp
   call helper_interrupt_service_routine
   pop %rax 
   pop %rcx
@@ -34,4 +34,4 @@ default_interrupt_service_routine:
   pop %r15
   pop %rbp
   iretq
-
+  addq $8, %rsp
