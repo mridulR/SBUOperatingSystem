@@ -9,6 +9,6 @@ extern uint64_t current_width, current_height;
 
 void kprintf(const char *fmt, ...);
 
-void printTime(const char *fmt); // end it with /0
+void printTime(unsigned int time);
 
 #endif

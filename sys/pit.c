@@ -27,7 +27,9 @@ uint32_t get_pit_count() {
 
 void helper_calculate_timer() {
   ++g_pit_count; 
-  kprintf("%d", g_pit_count);
+  //TODO: Fix me
+  //kprintf("%d\n", g_pit_count);
+  printTime(g_pit_count);
   outportb(0x20, 0x20);
 }
 
@@ -35,7 +37,7 @@ void init_pit() {
 
   set_ir_in_idt(32, pit_interrupt_service_routine);
 
-  uint16_t base_frequency = 1000;
+  uint16_t base_frequency = 4000;
   uint64_t max_frequency = 1193181;
  
   // Calculate the pit frequency
@@ -45,7 +47,7 @@ void init_pit() {
   outportb(PIT_CHANNEL_0, (uint8_t)frequency);
   outportb(PIT_CHANNEL_0, (uint8_t)(frequency >> 8));
   g_pit_count = 0; 
-  /*outportb(0x20, 0x20);
-  __asm__ __volatile__ ("sti\n");*/
+  /*outportb(0x20, 0x20);*/
+  __asm__ __volatile__ ("sti\n");
 }
 

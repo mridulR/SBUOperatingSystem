@@ -45,12 +45,14 @@ void UpdateHeightWidth(char * currAddr) {
   current_width =  currAddValue % MAX_SCREEN_WIDTH;
 }
 
-void printTime(const char *fmt) {
-  char *block = TIME_ADDRESS;
+void printTime(unsigned int time) {
+  /*char *block = TIME_ADDRESS;
   while(*fmt != '\0') {
    *block++ = *fmt++;
    *block++ = 0x07;
   }
+  */ 
+  HandleUnsignedInt(time, TIME_ADDRESS);
 }
 
 void kprintf(const char *fmt, ...)

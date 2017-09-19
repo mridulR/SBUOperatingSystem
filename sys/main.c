@@ -30,18 +30,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1   && smap->length != 0) {
-     // kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
     }
   }
   kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
-  test_interrupt_zero();
-  printTime("TimeTillBoot\0");
-
-  for(int i = 0; i< 50; i++) {
-      kprintf("%d\n", i);
-  } 
   while(1) {
   }
 }
@@ -72,7 +66,7 @@ void boot(void)
   //TODO: Think more on outportb ? What's the best place to end interrupt ?
   //outportb(0x20, 0x20);
   // Start the timer 
-  enable_Interrupts();
+  //enable_Interrupts();
   
   start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),

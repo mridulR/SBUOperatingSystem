@@ -48,7 +48,7 @@ void disable_Interrupts() {
 }
 
 void helper_interrupt_service_routine() {
-  kprintf("Hello World !!!");
+  __asm__ __volatile__ ( "iretq");
 }
 void default_interrupt_service_routine();
 
