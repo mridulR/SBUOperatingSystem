@@ -63,6 +63,10 @@ void helper_keyboard_handler() {
          *(KEYPRESS_ADDRESS +2) = 0x07;
        }
      }
+     if(uppercase &&  *(KEYPRESS_ADDRESS +1)>=97 &&  *(KEYPRESS_ADDRESS +1)<= 122 ) {
+       *(KEYPRESS_ADDRESS +1) = *(KEYPRESS_ADDRESS +1) - 32;
+       *(KEYPRESS_ADDRESS +2) = 0x07;
+     }
   };
   outportb(0x20, 0x20);
 }
