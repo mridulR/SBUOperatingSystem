@@ -2,6 +2,7 @@
 #define _DEFS_H
 
 #define NULL ((void*)0)
+#define EOF (-1)
 
 typedef unsigned long  uint64_t;
 typedef          long   int64_t;
@@ -19,4 +20,24 @@ typedef uint64_t off_t;
 
 typedef uint32_t pid_t;
 
+typedef unsigned short mode_t;
+
+typedef int16_t     intptr_t;
+
+struct __sFile
+{
+  int fd;
+};
+
+typedef struct __sFile FILE;
+
+typedef uint32_t __uid_t;
+typedef uint32_t __uid_t;
+
+#define _NIOBRW 16
+extern FILE _iob[_NIOBRW];
+
+#define stdin   (&_iob[0])
+#define stdout  (&_iob[1])
+#define stderr  (&_iob[2])
 #endif
