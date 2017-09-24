@@ -156,7 +156,6 @@ void HandleSignedInt(const int i_argVal, char* currAddr) {
     UpdateHeightWidth(currAddr);
     return;
   }
-
   if(i_argVal < 0){
       //printf("%c", 0x2d);
       *currAddr++ = 0x2d;

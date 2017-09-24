@@ -1,0 +1,5 @@
+#!rootfs/bin/sbush
+ls
+pwd
+ls | wc | wc
+

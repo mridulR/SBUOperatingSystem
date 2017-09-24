@@ -153,7 +153,6 @@ void init_pic(uint8_t offset1, uint8_t offset2) {
   write_data_to_pic(slave_pic_data, SLAVE_PIC_ID);
   io_wait();
 
-
 }
 
 
