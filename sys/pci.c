@@ -39,7 +39,7 @@ Register naming conventions:
 */
 
 
-//! Currently we handle only 256 devices
+//! Currently we handle only 8 devices
 Pci_dev_info devInfo[MAX_PCI_DEVICES] = {0};
 
 static int devCount = 0;
