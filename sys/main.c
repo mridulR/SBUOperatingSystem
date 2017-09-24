@@ -6,6 +6,7 @@
 #include <sys/idt.h>
 #include <sys/pic.h>
 #include <sys/pit.h>
+#include <sys/pci.h>
 #include <sys/ps2Controller.h>
 
 #define true 1
@@ -61,6 +62,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   // formatting welcome screen
   setUpWelcomeScreen();
 
+  init_pci_devInfo();
   enable_Interrupts();
 
   while(1) {

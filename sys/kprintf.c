@@ -150,6 +150,12 @@ void HandleSignedInt(const int i_argVal, char* currAddr) {
   const int zeroHex = 0x30;
   char ch[100];
   int numdigits = 0;
+  if(num == 0) {
+    *currAddr++ = '0';
+    *currAddr++ = 0x07;
+    UpdateHeightWidth(currAddr);
+    return;
+  }
 
   if(i_argVal < 0){
       //printf("%c", 0x2d);
@@ -174,6 +180,13 @@ void HandleAddress(uint64_t addr, char* currAddr){
   char ch[100]= {0}; 
   uint64_t num = addr;
   int i = 0, rem = 0;
+
+  if(num == 0) {
+    *currAddr++ = '0';
+    *currAddr++ = 0x07;
+    UpdateHeightWidth(currAddr);
+    return;
+  }
 
   while(num > 0) {
      rem = num % 16; 
@@ -201,7 +214,12 @@ void HandleUnsignedInt(unsigned int u_argVal, char* currAddr) {
   const unsigned int zeroHex = 0x30;
   char ch[100] = {0};
   int numdigits = 0;
-
+  if(num == 0) {
+    *currAddr++ = '0';
+    *currAddr++ = 0x07;
+    UpdateHeightWidth(currAddr);
+    return;
+  }
   while(num > 0) {
     ch[numdigits++] = num % 10; 
     num=num/10;
