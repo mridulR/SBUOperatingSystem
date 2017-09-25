@@ -7,6 +7,7 @@
 #include <sys/pic.h>
 #include <sys/pit.h>
 #include <sys/pci.h>
+#include <sys/ahci.h>
 #include <sys/ps2Controller.h>
 
 #define true 1
@@ -53,7 +54,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1   && smap->length != 0) {
-      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+      kprintf("Available Physical Memory [%p-%p] Type %p \n", smap->base, smap->base + smap->length, smap->type);
     }
   }
   kprintf("physfree %p\n", (uint64_t)physfree);
@@ -63,6 +64,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   setUpWelcomeScreen();
 
   init_pci_devInfo();
+  init_ahci();
   enable_Interrupts();
 
   while(1) {

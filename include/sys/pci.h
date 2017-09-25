@@ -49,4 +49,8 @@ uint32_t inportl(uint16_t port);
 
 void outportl(uint16_t port, uint32_t value);
 
+Pci_dev_info* getPCIDevInfo(uint8_t index);
+
+uint32_t getPCIDevInfoCount();
+
 #endif

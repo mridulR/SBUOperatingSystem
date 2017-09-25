@@ -44,6 +44,14 @@ Pci_dev_info devInfo[MAX_PCI_DEVICES] = {0};
 
 static int devCount = 0;
 
+Pci_dev_info* getPCIDevInfo(uint8_t index) {
+  return &devInfo[index];
+}
+
+uint32_t getPCIDevInfoCount() {
+  return devCount; 
+}
+
 uint32_t inportl(uint16_t port)
 {
   uint32_t ret;
