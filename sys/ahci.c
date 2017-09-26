@@ -3,10 +3,10 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 
-#define	SATA_SIG_ATA	0x00000101	// SATA drive
-#define	SATA_SIG_ATAPI	0xEB140101	// SATAPI drive
-#define	SATA_SIG_SEMB	0xC33C0101	// Enclosure management bridge
-#define	SATA_SIG_PM	    0x96690101	// Port multiplier
+#define  SATA_SIG_ATA  0x00000101  // SATA drive
+#define  SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
+#define  SATA_SIG_SEMB  0xC33C0101  // Enclosure management bridge
+#define  SATA_SIG_PM      0x96690101  // Port multiplier
 #define ATA_CMD_READ_DMA_EX 0x25
 
 #define AHCI_BASE   0x400000    // 4M
@@ -204,56 +204,56 @@ static int check_type(hba_port_t *port)
   
   //kprintf("\n ssts = %p ipm= %p det=%p sig=%p cmd = %p\n", port->ssts, ipm, det, port->sig, port->cmd);
  
-  if (det != HBA_PORT_DET_PRESENT)	// Check drive status
-  	return AHCI_DEV_NULL;
+  if (det != HBA_PORT_DET_PRESENT)  // Check drive status
+    return AHCI_DEV_NULL;
   if (ipm != HBA_PORT_IPM_ACTIVE)
-  	return AHCI_DEV_NULL;
+    return AHCI_DEV_NULL;
   
   switch (port->sig)
   {
   case SATA_SIG_ATAPI:
-  	return AHCI_DEV_SATAPI;
+    return AHCI_DEV_SATAPI;
   case SATA_SIG_SEMB:
-  	return AHCI_DEV_SEMB;
+    return AHCI_DEV_SEMB;
   case SATA_SIG_PM:
-  	return AHCI_DEV_PM;
+    return AHCI_DEV_PM;
   default:
-  	return AHCI_DEV_SATA;
+    return AHCI_DEV_SATA;
   }
 }
 
 
 void probe_port(hba_mem_t *abar)
 {
-	// Search disk in impelemented ports
-	uint32_t pi = abar->pi;
+  // Search disk in impelemented ports
+  uint32_t pi = abar->pi;
         //kprintf("\nabar->cap = %p ghc = %p ir = %p abar->pi = %p\n", abar->cap, abar->ghc, abar->is_rwc, abar->pi);
-	int i = 0;
-	while (i<MAX_PORT_CNT)
-	{
-		if (pi & 1)
-		{
-			int dt = check_type((hba_port_t *)&abar->ports[i]);
-			if (dt == AHCI_DEV_SATA)
-			{
-				kprintf("SATA drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_SATAPI)
-			{
-				kprintf("SATAPI drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_SEMB)
-			{
-				kprintf("SEMB drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_PM)
-			{
-				kprintf("PM drive found at port %d\n", i);
-			}
-		}
-		pi >>= 1;
-		i++;
-	}
+  int i = 0;
+  while (i<MAX_PORT_CNT)
+  {
+    if (pi & 1)
+    {
+      int dt = check_type((hba_port_t *)&abar->ports[i]);
+      if (dt == AHCI_DEV_SATA)
+      {
+        kprintf("SATA drive found at port %d\n", i);
+      }
+      else if (dt == AHCI_DEV_SATAPI)
+      {
+        kprintf("SATAPI drive found at port %d\n", i);
+      }
+      else if (dt == AHCI_DEV_SEMB)
+      {
+        kprintf("SEMB drive found at port %d\n", i);
+      }
+      else if (dt == AHCI_DEV_PM)
+      {
+        kprintf("PM drive found at port %d\n", i);
+      }
+    }
+    pi >>= 1;
+    i++;
+  }
 }
  
 void init_ahci() {
