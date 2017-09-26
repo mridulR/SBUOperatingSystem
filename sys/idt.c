@@ -1,5 +1,6 @@
 #include <sys/idt.h>
 #include <sys/kprintf.h>
+#include <sys/memset.h>
 #include <sys/types.h>
 #include <sys/asm_util.h>
 
@@ -13,16 +14,6 @@
 
 //32-bit Interrupt gate: 0x8E ( P=1, DPL=00, S=0, type=1110 => type_attr=1000_1110=0x8E)
 #define INTERRUPT_GATE_TYPE_ATTR 0x8E
-
-void *memset(void *s, int c, int n)
-{
-    unsigned char *ch = s;
-    for(int i=0; i < n; ++i)
-    {
-        *ch++ = c;
-    }
-    return s;
-}
 
 // Initilizing the IDT structure
 static Idtr __attribute__((used)) s_Idtr = {0};
