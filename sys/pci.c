@@ -124,6 +124,7 @@ uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
      devInfo[devCount].subClass   = ((word >> 16) & 0xFF);
      devInfo[devCount].classCode  = ((word >> 24) & 0xFF);
 
+     //kprintf("\nFound device:  V: %d D: %d C: %d S: %d  !!!", vendorId, deviceId, devInfo[devCount].classCode, devInfo[devCount].subClass);
      word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BIST);
      devInfo[devCount].cacheLineSize = (word & 0xFF);
      devInfo[devCount].latencyTimer  = ((word >> 8)  & 0xFF);

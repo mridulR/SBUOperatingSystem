@@ -24,9 +24,9 @@
 #define TRUE  1 
 #define FALSE 0 
 
-#define BLOCK_BASE_ADDRESS 0x00002000
-#define NUM_BLOCKS 1
-#define BLOCK_SIZE 1024
+#define BLOCK_BASE_ADDRESS 0x00000100
+#define NUM_BLOCKS 100 
+#define BLOCK_SIZE 4096 
 
 typedef uint8_t  BOOL;
 typedef uint8_t  BYTE;
@@ -359,6 +359,17 @@ void probe_port(hba_mem_t *abar)
 
 
 }
+
+int str_len(char *ch) {
+  int len = 0;
+  char *trav = ch;
+  while (*trav != '\0') {
+    trav++;
+    len++;
+   }
+  return len; 
+}
+
  
 void init_ahci() {
   
@@ -376,33 +387,50 @@ void init_ahci() {
                devInfo->subClass, devInfo->bar4, devInfo->bar5);
       break;
     }
+
+    if(devInfo->vendorId == 32902 && devInfo->deviceId == 10521) {
+      kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
+               devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
+               devInfo->subClass, devInfo->bar4, devInfo->bar5);
+      break;
+    }
   }
+
+  kprintf("\nGoing to Write/Read from disk: ");
   if(devInfo!= NULL) {
+    uint32_t wstartl = 0;
+    uint32_t wstarth = 0;
+    uint32_t rstartl = 0;
+    uint32_t rstarth = 0;
     unsigned long bar5 = (unsigned long)(devInfo->bar5);
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
-  }
   
-  kprintf("\nGoing to Write/Read from disk: ");
-  
-  char *writeBuffer[NUM_BLOCKS];
-
-  uint64_t addr = (BLOCK_BASE_ADDRESS);
-  char *ptr = (char *) (uint64_t)addr;
-
-  for(int i=0; i<NUM_BLOCKS; ++i) {
-    writeBuffer[i] = ptr;
-    memset(writeBuffer[i], '\0', BLOCK_SIZE);
-    memset(writeBuffer[i], (0x32 + i), BLOCK_SIZE);
-    write(&abar->ports[g_SATA_PORT_INDEX], 0, 0, 1, (WORD *)writeBuffer[i]);
-    ptr = ptr + BLOCK_SIZE;
-  }
-  
-  char *readBuffer[NUM_BLOCKS];
-  for(int i = 0; i< NUM_BLOCKS; ++i) {
-    readBuffer[i] = NULL;
-    read(&abar->ports[g_SATA_PORT_INDEX], 0, 0, 1, (WORD *)readBuffer[i]);
-    kprintf("\n1st Read Value = %s", readBuffer[i]);
+    kprintf("\nReady to Write/Read from disk: ");
+    if(g_SATA_PORT_INDEX != -1) {
+      char *writeBuffer[NUM_BLOCKS];
+      
+      uint64_t addr = (BLOCK_BASE_ADDRESS);
+      char *ptr = (char *) (uint64_t)addr;
+      
+      for(int i=0; i<NUM_BLOCKS; ++i) {
+        writeBuffer[i] = ptr;
+        memset(writeBuffer[i], '\0', BLOCK_SIZE);
+        memset(writeBuffer[i], i+1, BLOCK_SIZE-1);
+        write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[i]);
+        ptr = ptr + BLOCK_SIZE;
+        wstartl = wstartl + 1;
+      }
+      
+      char *readBuffer[NUM_BLOCKS];
+      for(int i = 0; i< NUM_BLOCKS; ++i) {
+        readBuffer[i] = NULL;
+        read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[i]);
+        char byteVal = *readBuffer[i];
+        kprintf("Byte Value = %c Length of bytes read = %d \n", byteVal, str_len(readBuffer[i]));
+        rstartl = rstartl + 1;
+      }
+    }
   }
 
 }
