@@ -26,7 +26,7 @@
 
 #define BLOCK_BASE_ADDRESS 0x00000100
 #define NUM_BLOCKS 100 
-#define BLOCK_SIZE 4096 
+#define BLOCK_SIZE 512 
 
 typedef uint8_t  BOOL;
 typedef uint8_t  BYTE;
@@ -334,7 +334,7 @@ void probe_port(hba_mem_t *abar)
       if (dt == AHCI_DEV_SATA)
       {
         g_SATA_PORT_INDEX = i;
-        kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d\n", i, g_SATA_PORT_INDEX);
+        //kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d\n", i, g_SATA_PORT_INDEX);
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
@@ -361,7 +361,7 @@ void probe_port(hba_mem_t *abar)
 }
 
 int str_len(char *ch) {
-  int len = 0;
+  int len = 1;
   char *trav = ch;
   while (*trav != '\0') {
     trav++;
@@ -382,21 +382,21 @@ void init_ahci() {
     if(devInfo->vendorId == 32902 && devInfo->deviceId == 10530 &&
                 devInfo->classCode == 1  && devInfo->subClass == 6) {
 
-      kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
+      /*kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
                devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
-               devInfo->subClass, devInfo->bar4, devInfo->bar5);
+               devInfo->subClass, devInfo->bar4, devInfo->bar5);*/
       break;
     }
 
     if(devInfo->vendorId == 32902 && devInfo->deviceId == 10521) {
-      kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
+      /*kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
                devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
-               devInfo->subClass, devInfo->bar4, devInfo->bar5);
+               devInfo->subClass, devInfo->bar4, devInfo->bar5);*/
       break;
     }
   }
 
-  kprintf("\nGoing to Write/Read from disk: ");
+  //kprintf("\nGoing to Write/Read from disk: ");
   if(devInfo!= NULL) {
     uint32_t wstartl = 0;
     uint32_t wstarth = 0;
@@ -406,7 +406,7 @@ void init_ahci() {
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
   
-    kprintf("\nReady to Write/Read from disk: ");
+    //kprintf("\nReady to Write/Read from disk: ");
     if(g_SATA_PORT_INDEX != -1) {
       char *writeBuffer[NUM_BLOCKS];
       
@@ -417,18 +417,27 @@ void init_ahci() {
         writeBuffer[i] = ptr;
         memset(writeBuffer[i], '\0', BLOCK_SIZE);
         memset(writeBuffer[i], i+1, BLOCK_SIZE-1);
-        write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[i]);
-        ptr = ptr + BLOCK_SIZE;
-        wstartl = wstartl + 1;
+        for(int j=0; j<1; j++) {
+          write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 1, (WORD *)writeBuffer[i]);
+          ptr = ptr + BLOCK_SIZE;
+          wstartl = wstartl + 1;
+        }
       }
       
       char *readBuffer[NUM_BLOCKS];
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
-        read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[i]);
-        char byteVal = *readBuffer[i];
-        kprintf("Byte Value = %c Length of bytes read = %d \n", byteVal, str_len(readBuffer[i]));
-        rstartl = rstartl + 1;
+        int readCount = 0;
+        char byteVal = '\0';
+        for(int j=0; j<1; j++) {
+          read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 1, (WORD *)readBuffer[i]);
+          byteVal = *readBuffer[i];
+          rstartl = rstartl + 1;
+          readCount = readCount + str_len(readBuffer[i]);
+        }
+
+        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        //kprintf("Read Value= %s\n", readBuffer[i]);
       }
     }
   }
