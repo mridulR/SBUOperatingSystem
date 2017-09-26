@@ -21,6 +21,9 @@
 #define REGISTER_OFFSET_RESERVED_0      0x34
 #define REGISTER_OFFSET_RESERVED_1      0x38
 #define REGISTER_OFFSET_INTERRUPT_FLAGS 0x3C
+
+#define HBA_MEM_ADDRESS  0x2F000000
+
 /*
 
 Good Read: https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture
@@ -141,6 +144,17 @@ uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
 
      word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_4);
      devInfo[devCount].bar4 = word & 0xFFFFFFFF;
+     
+     //TODO: Please don't use hard coded address later on.
+     // Fix this when we implement paging
+     uint32_t address;
+     uint32_t func = 0;
+
+     address = (uint32_t)((bus << 16) | (slot << 11) |
+              (func << 8) | (REGISTER_OFFSET_BAR_ADDR_5 & 0xfc) | ((uint32_t)0x80000000));
+ 
+     outportl(PCI_CONFIG_ADDRESS, address);
+     outportl(PCI_CONFIG_DATA, HBA_MEM_ADDRESS);
 
      word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_5);
      devInfo[devCount].bar5 = word & 0xFFFFFFFF;
