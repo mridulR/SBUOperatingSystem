@@ -26,7 +26,7 @@
 
 #define BLOCK_BASE_ADDRESS 0x00000100
 #define NUM_BLOCKS 100 
-#define BLOCK_SIZE 512 
+#define BLOCK_SIZE 4096 
 
 typedef uint8_t  BOOL;
 typedef uint8_t  BYTE;
@@ -396,7 +396,6 @@ void init_ahci() {
     }
   }
 
-  //kprintf("\nGoing to Write/Read from disk: ");
   if(devInfo!= NULL) {
     uint32_t wstartl = 0;
     uint32_t wstarth = 0;
@@ -406,38 +405,31 @@ void init_ahci() {
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
   
-    //kprintf("\nReady to Write/Read from disk: ");
     if(g_SATA_PORT_INDEX != -1) {
-      char *writeBuffer[NUM_BLOCKS];
+      char *writeBuffer[1];
       
       uint64_t addr = (BLOCK_BASE_ADDRESS);
       char *ptr = (char *) (uint64_t)addr;
       
+      writeBuffer[0] = ptr;
       for(int i=0; i<NUM_BLOCKS; ++i) {
-        writeBuffer[i] = ptr;
-        memset(writeBuffer[i], '\0', BLOCK_SIZE);
-        memset(writeBuffer[i], i+1, BLOCK_SIZE-1);
-        for(int j=0; j<1; j++) {
-          write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 1, (WORD *)writeBuffer[i]);
-          ptr = ptr + BLOCK_SIZE;
-          wstartl = wstartl + 1;
-        }
+        memset(writeBuffer[0], '\0', BLOCK_SIZE);
+        memset(writeBuffer[0], i+1, BLOCK_SIZE-1);
+        write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[0]);
+        wstartl = wstartl + 8;
       }
       
-      char *readBuffer[NUM_BLOCKS];
+      char *readBuffer[1];
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
         int readCount = 0;
-        char byteVal = '\0';
-        for(int j=0; j<1; j++) {
-          read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 1, (WORD *)readBuffer[i]);
-          byteVal = *readBuffer[i];
-          rstartl = rstartl + 1;
-          readCount = readCount + str_len(readBuffer[i]);
-        }
-
-        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
-        //kprintf("Read Value= %s\n", readBuffer[i]);
+        //char byteVal = '\0';
+        read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
+        //byteVal = *readBuffer[0];
+        rstartl = rstartl + 8;
+        readCount = readCount + str_len(readBuffer[0]);
+        //kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        kprintf("Read Value = %s\n", readBuffer[0]);
       }
     }
   }

@@ -1,6 +1,8 @@
 #include <sys/kprintf.h>
 #include <sys/types.h>
 #include <stdarg.h>
+#include <sys/memcpy.h>
+#include <sys/memset.h>
 
 #define MAX_SCREEN_WIDTH 160
 #define MAX_SCREEN_HEIGHT 24
@@ -18,7 +20,7 @@ void HandleEverythingElse(char fmt, char* currAddr);
 char *getCurrentAddress() {
   if (current_height > 23) {
     // do scrolling
-    char * baseAddr = (char *) BASE_ADDR;
+    char * baseAddr = (char *) VIDEO_BUFFER_BASE_ADDR;
     for (int i = 0; i < MAX_SCREEN_HEIGHT - 1; i++) {
       for (int j = 0; j < MAX_SCREEN_WIDTH; j++) {
         baseAddr[i * MAX_SCREEN_WIDTH + j] = baseAddr[(i + 1) * MAX_SCREEN_WIDTH + j];
@@ -33,14 +35,14 @@ char *getCurrentAddress() {
       }
     }    
   }
-  char *currAddr = (char *)(BASE_ADDR);
+  char *currAddr = (char *)(VIDEO_BUFFER_BASE_ADDR);
   currAddr = currAddr + (current_height * MAX_SCREEN_WIDTH + current_width);
   return currAddr;
 }
 
 void UpdateHeightWidth(char * currAddr) {
   uint64_t currAddValue = (uint64_t) currAddr; 
-  currAddValue -= (uint64_t)BASE_ADDR;
+  currAddValue -= (uint64_t)VIDEO_BUFFER_BASE_ADDR;
   current_height = currAddValue / MAX_SCREEN_WIDTH;
   current_width =  currAddValue % MAX_SCREEN_WIDTH;
 }
@@ -138,9 +140,21 @@ void HandleNewLine() {
 }
 
 void HandleString(char* str, char* currAddr) {
-  while(*str != 0){
+  uint64_t availableSpace = (uint64_t)(VIDEO_BUFFER_MAX_LIMIT) - (uint64_t)currAddr;
+  char saveBufferLines[160 * 10];
+  while(*str != 0 && availableSpace != 0){
       *currAddr++ = *str++;
       *currAddr++ = 0x07;
+      availableSpace -=2;
+      if(availableSpace == 0){
+        const char *startAddress = (char *)VIDEO_BUFFER_BASE_ADDR + (160 * 15);
+        uint64_t size = (uint64_t)currAddr - (uint64_t)startAddress;
+        memset(saveBufferLines,'\0', 160 *10);
+        memcpy(saveBufferLines, startAddress, size);
+        memset((char *)VIDEO_BUFFER_BASE_ADDR,'\0', 160 * 24);
+        memcpy((char *)VIDEO_BUFFER_BASE_ADDR, saveBufferLines, size);
+        currAddr = (char *)VIDEO_BUFFER_BASE_ADDR + size;
+      }
   }
   UpdateHeightWidth(currAddr);
 }

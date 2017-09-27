@@ -21,10 +21,10 @@ extern char kernmem, physbase;
 
 uint64_t current_width = 0;
 uint64_t current_height = 0;
-char *TIME_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 120));
-char *KEYPRESS_BANNER = (char *)(BASE_ADDR + ((160 * 24) + 0));
-char *CTRL_KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 21));
-char *KEYPRESS_ADDRESS = (char *)(BASE_ADDR + ((160 * 24) + 23));
+char *TIME_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 120));
+char *KEYPRESS_BANNER = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 0));
+char *CTRL_KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 21));
+char *KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 23));
 
 
 void setUpWelcomeScreen() {
