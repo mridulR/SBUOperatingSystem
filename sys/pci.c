@@ -1,6 +1,8 @@
 #include <sys/pci.h>
+#include <sys/ahci.h>
+#include <sys/memset.h>
 
-#define MAX_PCI_DEVICES 8
+#define MAX_PCI_DEVICES 256
 
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA    0xCFC 
@@ -22,7 +24,9 @@
 #define REGISTER_OFFSET_RESERVED_1      0x38
 #define REGISTER_OFFSET_INTERRUPT_FLAGS 0x3C
 
-#define HBA_MEM_ADDRESS  0x2F000000
+#define HBA_MEM_ADDRESS_2  0x2F000000
+#define HBA_MEM_ADDRESS    0x000A6000
+// 0x000A0000 => 640
 
 /*
 
@@ -102,9 +106,9 @@ uint32_t pciConfigReadWord(uint8_t bus, uint8_t slot,
     return (tmp);
  }
 
-uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
+uint16_t pciCheckVendor(uint8_t bus, uint8_t slot, uint8_t funct) {
 
-  uint32_t word     = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_VENDOR);
+  uint32_t word     = pciConfigReadWord(bus, slot, funct, REGISTER_OFFSET_VENDOR);
   uint16_t vendorId   = word & 0xFFFF;
   uint16_t deviceId = (word >> 16) & 0xFFFF;
 
@@ -113,71 +117,77 @@ uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
   if (vendorId != 0xFFFF) {
      devInfo[devCount].vendorId = vendorId;
      devInfo[devCount].deviceId = deviceId;
+     devInfo[devCount].bus = (uint32_t)bus;
+     devInfo[devCount].func= (uint32_t)funct;
+     devInfo[devCount].slot= (uint32_t)slot;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_STATUS);
+     word = pciConfigReadWord(bus, slot, funct, REGISTER_OFFSET_STATUS);
      devInfo[devCount].command = (word & 0xFFFF);
      devInfo[devCount].status  = ((word >> 16) & 0xFFFF);
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_CLASS);
+     word = pciConfigReadWord(bus, slot, funct, REGISTER_OFFSET_CLASS);
      devInfo[devCount].revisionId = (word & 0xFF);
      devInfo[devCount].progIf     = ((word >> 8)  & 0xFF);
      devInfo[devCount].subClass   = ((word >> 16) & 0xFF);
      devInfo[devCount].classCode  = ((word >> 24) & 0xFF);
 
-     //kprintf("\nFound device:  V: %d D: %d C: %d S: %d  !!!", vendorId, deviceId, devInfo[devCount].classCode, devInfo[devCount].subClass);
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BIST);
+     kprintf("\nFound device:  V: %d D: %d C: %d S: %d  F: %d!!!", vendorId, deviceId, devInfo[devCount].classCode, devInfo[devCount].subClass, funct);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BIST);
      devInfo[devCount].cacheLineSize = (word & 0xFF);
      devInfo[devCount].latencyTimer  = ((word >> 8)  & 0xFF);
      devInfo[devCount].headerType    = ((word >> 16) & 0xFF);
      devInfo[devCount].bist          = ((word >> 24) & 0xFF);
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_0);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_0);
      devInfo[devCount].bar0 = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_1);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_1);
      devInfo[devCount].bar1 = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_2);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_2);
      devInfo[devCount].bar2 = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_3);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_3);
      devInfo[devCount].bar3 = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_4);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_4);
      devInfo[devCount].bar4 = word & 0xFFFFFFFF;
      
      //TODO: Please don't use hard coded address later on.
      // Fix this when we implement paging
      uint32_t address;
-     uint32_t func = 0;
+     //uint32_t func = 0;
+
+     unsigned long addr_temp = (unsigned long)HBA_MEM_ADDRESS;
+     memset((uint32_t*) addr_temp, '\0', sizeof(hba_mem_t));
 
      address = (uint32_t)((bus << 16) | (slot << 11) |
-              (func << 8) | (REGISTER_OFFSET_BAR_ADDR_5 & 0xfc) | ((uint32_t)0x80000000));
+              (funct << 8) | (REGISTER_OFFSET_BAR_ADDR_5 & 0xfc) | ((uint32_t)0x80000000));
  
      outportl(PCI_CONFIG_ADDRESS, address);
-     outportl(PCI_CONFIG_DATA, HBA_MEM_ADDRESS);
+     outportl(PCI_CONFIG_DATA, addr_temp);
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_BAR_ADDR_5);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_BAR_ADDR_5);
      devInfo[devCount].bar5 = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_CS_POINTER);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_CS_POINTER);
      devInfo[devCount].cardBusCISPtr = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_SUBSYSTEM);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_SUBSYSTEM);
      devInfo[devCount].subsystemVendorId = (word  & 0xFFFF);
      devInfo[devCount].subsystemId       = ((word >> 16) & 0xFFFF);
  
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_ROM_BASE_ADDR);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_ROM_BASE_ADDR);
      devInfo[devCount].expansionBaseROMAddr = word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_RESERVED_0);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_RESERVED_0);
      devInfo[devCount].capabilitiesPtr = (word & 0xFFFF);
      devInfo[devCount].reserved0       = ((word >> 16) & 0xFFFF);
  
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_RESERVED_1);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_RESERVED_1);
      devInfo[devCount].reserved1= word & 0xFFFFFFFF;
 
-     word = pciConfigReadWord(bus,slot,0, REGISTER_OFFSET_INTERRUPT_FLAGS);
+     word = pciConfigReadWord(bus,slot, funct, REGISTER_OFFSET_INTERRUPT_FLAGS);
      devInfo[devCount].interruptLine = (word & 0xFF);
      devInfo[devCount].interruptPin  = ((word >> 8)  & 0xFF);
      devInfo[devCount].minGrant      = ((word >> 16) & 0xFF);
@@ -189,8 +199,9 @@ uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
              devInfo[devCount].progIf, devInfo[devCount].revisionId,
              devInfo[devCount].classCode, devInfo[devCount].subClass,
              devInfo[devCount].cacheLineSize, devInfo[devCount].latencyTimer, 
-             devInfo[devCount].bist, devInfo[devCount].headerType); 
-
+             devInfo[devCount].bist, devInfo[devCount].headerType);
+      
+      
       kprintf("\nB0: %p B1: %p B2: %p B3: %p B4: %p B5: %p IL: %d IP: %d LT: %d G: %d word: %d",
              devInfo[devCount].bar0, devInfo[devCount].bar1, 
              devInfo[devCount].bar2, devInfo[devCount].bar3, 
@@ -228,9 +239,11 @@ uint16_t pciCheckVendor(uint8_t bus, uint8_t slot) {
 3C	Max latency	Min Grant	Interrupt PIN	Interrupt Line
 */
 void init_pci_devInfo() {
+
   for(int bus = 0; bus < 256; ++bus) {
-    for(int deviceId = 0; deviceId<32; ++deviceId) {
-      pciCheckVendor(bus, deviceId);  
+    for(int deviceId = 0; deviceId < 32; ++deviceId) {
+      for (int funct = 0; funct < 8; ++funct)
+       pciCheckVendor(bus, deviceId, funct);  
     }
   }
 }

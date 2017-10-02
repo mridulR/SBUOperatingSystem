@@ -3,6 +3,8 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 
+#define DEVICE 1
+
 #define  SATA_SIG_ATA  0x00000101  // SATA drive
 #define  SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
 #define  SATA_SIG_SEMB  0xC33C0101  // Enclosure management bridge
@@ -28,6 +30,11 @@
 #define NUM_BLOCKS 100 
 #define BLOCK_SIZE 4096 
 
+#define REGISTER_OFFSET_BAR_ADDR_5      0x24
+
+#define PCI_CONFIG_ADDRESS 0xCF8
+#define PCI_CONFIG_DATA    0xCFC 
+
 typedef uint8_t  BOOL;
 typedef uint8_t  BYTE;
 typedef uint32_t DWORD;
@@ -35,7 +42,7 @@ typedef uint16_t WORD;
 
 // TODO: This value will be updated with second SATA drive.
 // Update code accordingly to read/write to SATA drives
-int g_SATA_PORT_INDEX = -1; 
+uint32_t g_SATA_PORT_INDEX = 0xFFFFFFFF; 
 
 // Start command engine
 void start_cmd(hba_port_t *port)
@@ -294,6 +301,8 @@ void port_rebase(hba_port_t *port, int portno)
 // Check device type
 static int check_type(hba_port_t *port)
 {
+
+#ifdef DEVICE 
   uint32_t ssts = port->ssts;
   
   uint8_t ipm = (ssts >> 8) & 0x0F;
@@ -305,6 +314,8 @@ static int check_type(hba_port_t *port)
     return AHCI_DEV_NULL;
   if (ipm != HBA_PORT_IPM_ACTIVE)
     return AHCI_DEV_NULL;
+
+#endif
   
   switch (port->sig)
   {
@@ -324,7 +335,7 @@ void probe_port(hba_mem_t *abar)
 {
   // Search disk in impelemented ports
   uint32_t pi = abar->pi;
-        //kprintf("\nabar->cap = %p ghc = %p ir = %p abar->pi = %p\n", abar->cap, abar->ghc, abar->is_rwc, abar->pi);
+  //kprintf("\nabar->cap = %p ghc = %p ir = %p abar->pi = %p\n", abar->cap, abar->ghc, abar->is_rwc, abar->pi);
   int i = 0;
   while (i<MAX_PORT_CNT)
   {
@@ -333,8 +344,11 @@ void probe_port(hba_mem_t *abar)
       int dt = check_type((hba_port_t *)&abar->ports[i]);
       if (dt == AHCI_DEV_SATA)
       {
-        g_SATA_PORT_INDEX = i;
-        //kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d\n", i, g_SATA_PORT_INDEX);
+        //TODO: Fix this check
+        if(g_SATA_PORT_INDEX == 0xFFFFFFFF || i < 2){
+          g_SATA_PORT_INDEX = i;
+          kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
+        }
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
@@ -379,59 +393,56 @@ void init_ahci() {
 
     devInfo = getPCIDevInfo(i);
 
-    if(devInfo->vendorId == 32902 && devInfo->deviceId == 10530 &&
-                devInfo->classCode == 1  && devInfo->subClass == 6) {
-
-      /*kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
-               devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
-               devInfo->subClass, devInfo->bar4, devInfo->bar5);*/
-      break;
-    }
-
-    if(devInfo->vendorId == 32902 && devInfo->deviceId == 10521) {
-      /*kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
-               devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
-               devInfo->subClass, devInfo->bar4, devInfo->bar5);*/
-      break;
-    }
+    if(devInfo->classCode == 1  && devInfo->subClass == 6) {
+ 
+       kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
+                devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
+               devInfo->subClass, devInfo->bar4, devInfo->bar5);
+       break;
+     }
   }
 
+  if(!devInfo)
+      kprintf("\n AHCI NOT FOUND !!!");
+
   if(devInfo!= NULL) {
-    uint32_t wstartl = 0;
-    uint32_t wstarth = 0;
-    uint32_t rstartl = 0;
-    uint32_t rstarth = 0;
+
     unsigned long bar5 = (unsigned long)(devInfo->bar5);
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
-  
     if(g_SATA_PORT_INDEX != -1) {
       char *writeBuffer[1];
       
       uint64_t addr = (BLOCK_BASE_ADDRESS);
       char *ptr = (char *) (uint64_t)addr;
       
+      uint32_t wstartl = 0;
+      uint32_t wstarth = 0;
+      uint32_t rstartl = 0;
+      uint32_t rstarth = 0;
+      
       writeBuffer[0] = ptr;
       for(int i=0; i<NUM_BLOCKS; ++i) {
         memset(writeBuffer[0], '\0', BLOCK_SIZE);
         memset(writeBuffer[0], i+1, BLOCK_SIZE-1);
+        g_SATA_PORT_INDEX = 0;
         write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[0]);
         wstartl = wstartl + 8;
       }
-      
+    
       char *readBuffer[1];
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
         int readCount = 0;
-        //char byteVal = '\0';
+        char byteVal = '\0';
         read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
-        //byteVal = *readBuffer[0];
+        byteVal = *readBuffer[0];
         rstartl = rstartl + 8;
         readCount = readCount + str_len(readBuffer[0]);
-        //kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
-        kprintf("Read Value = %s\n", readBuffer[0]);
+        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        //kprintf("Read Value = %s\n", readBuffer[0]);
       }
-    }
+    } 
   }
 
 }

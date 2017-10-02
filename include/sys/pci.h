@@ -5,6 +5,9 @@
 #include <sys/kprintf.h>
 
 struct pci_dev_info{
+  uint32_t bus;
+  uint32_t slot;
+  uint32_t func;
   uint16_t deviceId;
   uint16_t vendorId;
   uint16_t status;
@@ -43,7 +46,7 @@ void init_pci_devInfo();
 uint32_t pciConfigReadWord (uint8_t bus, uint8_t slot,
                             uint8_t func, uint8_t offset);
 
-uint16_t pciCheckVendor(uint8_t bus, uint8_t slot);
+uint16_t pciCheckVendor(uint8_t bus, uint8_t slot, uint8_t funct);
 
 uint32_t inportl(uint16_t port);
 
