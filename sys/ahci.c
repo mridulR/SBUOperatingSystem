@@ -3,12 +3,18 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 
-#define DEVICE 1
 
 #define  SATA_SIG_ATA  0x00000101  // SATA drive
 #define  SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
 #define  SATA_SIG_SEMB  0xC33C0101  // Enclosure management bridge
 #define  SATA_SIG_PM      0x96690101  // Port multiplier
+
+#define HBA_PORT_CMD_ST 0x1
+#define HBA_PORT_CMD_FRE 0x10
+#define HBA_PORT_CMD_FR 0x4000
+#define RESET_CMD_ST 0xfffffffe
+#define RESET_CMD_FRE 0xffffffef
+#define HBA_PORT_CMD_CR 0x8000
 
 #define ATA_CMD_READ_DMA_EX 0x25
 #define ATA_CMD_WRITE_DMA_EX 0x35
@@ -27,7 +33,7 @@
 #define FALSE 0 
 
 #define BLOCK_BASE_ADDRESS 0x00000100
-#define NUM_BLOCKS 100 
+#define NUM_BLOCKS 1 
 #define BLOCK_SIZE 4096 
 
 #define REGISTER_OFFSET_BAR_ADDR_5      0x24
@@ -96,6 +102,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
     port->is_rwc = (DWORD)-1;        // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
     int slot = find_cmdslot(port);
+    kprintf("Write Checkpoint 0\n");
     if (slot == -1)
         return FALSE;
  
@@ -105,6 +112,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
     cmdheader->w = 1;        // Write from device
     cmdheader->prdtl = (WORD)((count-1)>>4) + 1;    // PRDT entries count
  
+    kprintf("Write Checkpoint 1\n");
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) +
          (cmdheader->prdtl-1)*sizeof(hba_prdt_entry_t));
@@ -142,6 +150,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
  
     cmdfis->count = count;
  
+    kprintf("Write Checkpoint 2\n");
     // The below loop waits until the port is no longer busy before issuing a new command
     while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
     {
@@ -152,6 +161,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
         kprintf("Port is hung\n");
         return FALSE;
     }
+    kprintf("Write Checkpoint 3\n");
  
     port->ci = 1<<slot;    // Issue command
  
@@ -175,6 +185,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
         kprintf("Read disk error\n");
         return FALSE;
     }
+    kprintf("Write ret true\n");
  
     return TRUE;
 }
@@ -302,8 +313,7 @@ void port_rebase(hba_port_t *port, int portno)
 static int check_type(hba_port_t *port)
 {
 
-#ifdef DEVICE 
-  uint32_t ssts = port->ssts;
+  /*uint32_t ssts = port->ssts;
   
   uint8_t ipm = (ssts >> 8) & 0x0F;
   uint8_t det = ssts & 0x0F;
@@ -313,9 +323,7 @@ static int check_type(hba_port_t *port)
   if (det != HBA_PORT_DET_PRESENT)  // Check drive status
     return AHCI_DEV_NULL;
   if (ipm != HBA_PORT_IPM_ACTIVE)
-    return AHCI_DEV_NULL;
-
-#endif
+    return AHCI_DEV_NULL; */
   
   switch (port->sig)
   {
@@ -342,13 +350,17 @@ void probe_port(hba_mem_t *abar)
     if (pi & 1)
     {
       int dt = check_type((hba_port_t *)&abar->ports[i]);
+
+      WORD cmdStatus = (abar->ports[i].cmd) & HBA_PORT_CMD_ST;
+      WORD cmdFre = (abar->ports[i].cmd)&HBA_PORT_CMD_FRE;
+
       if (dt == AHCI_DEV_SATA)
       {
         //TODO: Fix this check
-        if(g_SATA_PORT_INDEX == 0xFFFFFFFF || i < 2){
+        //if(g_SATA_PORT_INDEX == 0xFFFFFFFF || i < 2){
           g_SATA_PORT_INDEX = i;
           kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
-        }
+        //}
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
@@ -362,15 +374,32 @@ void probe_port(hba_mem_t *abar)
       {
         kprintf("PM drive found at port %d\n", i);
       }
+      if(cmdFre!=0||cmdStatus!=0){
+        if(cmdStatus!=0 && i< 2){
+          abar->ports[i].cmd&=RESET_CMD_ST;
+        }
+        if(cmdFre!=0 && i < 2){
+	      (abar->ports[i].cmd)&=RESET_CMD_FRE;
+        }
+        i--;
+        continue;
+      }
     }
     pi >>= 1;
     i++;
   }
 
   //for(int i = 0; i<MAX_PORT_CNT; ++i) {
-  //port_rebase(&(abar->ports[g_SATA_PORT_INDEX]), g_SATA_PORT_INDEX);
+  g_SATA_PORT_INDEX = 0;
+  port_rebase(&(abar->ports[g_SATA_PORT_INDEX]), g_SATA_PORT_INDEX);
   //}
 
+  for(int i = 0;i<=1;i++){
+    while(abar->ports[i].cmd & HBA_PORT_CMD_CR);
+    abar->ports[i].cmd |= HBA_PORT_CMD_FRE;
+    abar->ports[i].cmd |= HBA_PORT_CMD_ST;
+    kprintf("HERE : %d", i);
+  }
 
 }
 
@@ -434,12 +463,12 @@ void init_ahci() {
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
         int readCount = 0;
-        char byteVal = '\0';
+        //char byteVal = '\0';
         read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
-        byteVal = *readBuffer[0];
+        //byteVal = *readBuffer[0];
         rstartl = rstartl + 8;
         readCount = readCount + str_len(readBuffer[0]);
-        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        //kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
         //kprintf("Read Value = %s\n", readBuffer[0]);
       }
     } 
