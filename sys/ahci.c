@@ -54,7 +54,7 @@ uint32_t g_SATA_PORT_INDEX = 0xFFFFFFFF;
 void start_cmd(hba_port_t *port)
 {
     // Wait until CR (bit15) is cleared
-    while (port->cmd & HBA_PxCMD_CR);
+    while (port->cmd & HBA_PxCMD_CR) { }
  
     // Set FRE (bit4) and ST (bit0)
     port->cmd |= HBA_PxCMD_FRE;
@@ -64,12 +64,19 @@ void start_cmd(hba_port_t *port)
 // Stop command engine
 void stop_cmd(hba_port_t *port)
 {
+    uint64_t count = 0; 
+
     // Clear ST (bit0)
     port->cmd &= ~HBA_PxCMD_ST;
- 
+
     // Wait until FR (bit14), CR (bit15) are cleared
     while(1)
     {
+        count++;
+        if(count == 1000) {
+           break;
+        }
+
         if (port->cmd & HBA_PxCMD_FR)
             continue;
         if (port->cmd & HBA_PxCMD_CR)
@@ -280,7 +287,7 @@ BOOL read(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 
 void port_rebase(hba_port_t *port, int portno)
 {
-    //stop_cmd(port);    // Stop command engine
+    stop_cmd(port);    // Stop command engine
  
     // Command list offset: 1K*portno
     // Command list entry size = 32
@@ -306,7 +313,7 @@ void port_rebase(hba_port_t *port, int portno)
         memset((void*)cmdheader[i].ctba, 0, 256);
     }
  
-    //start_cmd(port);    // Start command engine
+    start_cmd(port);    // Start command engine
 }
  
 // Check device type
@@ -351,16 +358,16 @@ void probe_port(hba_mem_t *abar)
     {
       int dt = check_type((hba_port_t *)&abar->ports[i]);
 
-      WORD cmdStatus = (abar->ports[i].cmd) & HBA_PORT_CMD_ST;
-      WORD cmdFre = (abar->ports[i].cmd)&HBA_PORT_CMD_FRE;
+      //WORD cmdStatus = (abar->ports[i].cmd) & HBA_PORT_CMD_ST;
+      //WORD cmdFre = (abar->ports[i].cmd)&HBA_PORT_CMD_FRE;
 
       if (dt == AHCI_DEV_SATA)
       {
         //TODO: Fix this check
-        //if(g_SATA_PORT_INDEX == 0xFFFFFFFF || i < 2){
+        if(i < 2){
           g_SATA_PORT_INDEX = i;
           kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
-        //}
+        }
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
@@ -374,16 +381,6 @@ void probe_port(hba_mem_t *abar)
       {
         kprintf("PM drive found at port %d\n", i);
       }
-      if(cmdFre!=0||cmdStatus!=0){
-        if(cmdStatus!=0 && i< 2){
-          abar->ports[i].cmd&=RESET_CMD_ST;
-        }
-        if(cmdFre!=0 && i < 2){
-	      (abar->ports[i].cmd)&=RESET_CMD_FRE;
-        }
-        i--;
-        continue;
-      }
     }
     pi >>= 1;
     i++;
@@ -394,13 +391,7 @@ void probe_port(hba_mem_t *abar)
   port_rebase(&(abar->ports[g_SATA_PORT_INDEX]), g_SATA_PORT_INDEX);
   //}
 
-  for(int i = 0;i<=1;i++){
-    while(abar->ports[i].cmd & HBA_PORT_CMD_CR);
-    abar->ports[i].cmd |= HBA_PORT_CMD_FRE;
-    abar->ports[i].cmd |= HBA_PORT_CMD_ST;
-    kprintf("HERE : %d", i);
-  }
-
+   
 }
 
 int str_len(char *ch) {
@@ -439,6 +430,34 @@ void init_ahci() {
     unsigned long bar5 = (unsigned long)(devInfo->bar5);
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
+    stop_cmd(0);    // Stop command engine
+    uint64_t count = 0;
+    while(1){
+        ++count;
+        kprintf("counter : %d cmd : %d \n", count, abar->ports[0].cmd);
+        if(count == 1000){
+            break;
+        }
+    }
+    /*
+    if(cmdFre!=0||cmdStatus!=0){
+        if(cmdStatus!=0){
+          abar->ports[0].cmd&=RESET_CMD_ST;
+        }
+        if(cmdFre!=0){
+	      (abar->ports[0].cmd)&=RESET_CMD_FRE;
+        }
+    }
+     kprintf("BEFORE RESET HERE: %d", i);
+    while(abar->ports[0].cmd & HBA_PORT_CMD_CR);
+    abar->ports[i].cmd |= HBA_PORT_CMD_FRE;
+    abar->ports[i].cmd |= HBA_PORT_CMD_ST;
+    kprintf("HERE: %d", i);*/
+    kprintf("ghC = %x\n",abar->ghc);
+    abar->ghc |= 0x00000001;
+    abar->ghc |= 0x00000002;
+    abar->ghc |= 0x10000000;
+    kprintf("ghC = %x\n",abar->ghc);
     if(g_SATA_PORT_INDEX != -1) {
       char *writeBuffer[1];
       
