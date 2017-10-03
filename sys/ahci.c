@@ -3,43 +3,44 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 
-
-#define  SATA_SIG_ATA  0x00000101  // SATA drive
-#define  SATA_SIG_ATAPI  0xEB140101  // SATAPI drive
-#define  SATA_SIG_SEMB  0xC33C0101  // Enclosure management bridge
+#define  SATA_SIG_ATA     0x00000101  // SATA drive
+#define  SATA_SIG_ATAPI   0xEB140101  // SATAPI drive
+#define  SATA_SIG_SEMB    0xC33C0101  // Enclosure management bridge
 #define  SATA_SIG_PM      0x96690101  // Port multiplier
 
-#define HBA_PORT_CMD_ST 0x1
-#define HBA_PORT_CMD_FRE 0x10
-#define HBA_PORT_CMD_FR 0x4000
-#define RESET_CMD_ST 0xfffffffe
-#define RESET_CMD_FRE 0xffffffef
-#define HBA_PORT_CMD_CR 0x8000
+#define HBA_PxCMD_ST   (1U)
+#define HBA_PxCMD_CLO  (1U << 3)
+#define HBA_PxCMD_FRE  (1U << 4)
+#define HBA_PxCMD_SUD  (1U << 2)
+#define HBA_PxCMD_FR   (1U << 14)
+#define HBA_PxCMD_CR   (1U << 15)
+#define HBA_PxCMD_DET  0xfffffffe
+#define HBA_PxIS_TFES  (1U << 30)
 
-#define ATA_CMD_READ_DMA_EX 0x25
-#define ATA_CMD_WRITE_DMA_EX 0x35
 
-#define AHCI_BASE   0x400000    // 4M
-#define AHCI_DEV_NULL        0
+#define COMMAND_MASK_BIT_ST    0xffff7fff
+#define COMMAND_MASK_BIT_FRE   0xffffbfff
+#define COMMAND_MASK_BIT_FR    0xfffffffe
+#define COMMAND_MASK_BIT_BR    0xfffffff7
+#define COMMAND_MASK_BIT_BR    0xfffffff7
+
+#define ATA_CMD_READ_DMA_EX    0x25
+#define ATA_CMD_WRITE_DMA_EX   0x35
+#define ATA_DEV_BUSY           0x80
+#define ATA_DEV_DRQ            0x08
+
+#define AHCI_BASE       0x400000    // 4M
+#define AHCI_DEV_NULL   0
 
 #define HBA_PORT_DET_PRESENT 3
 #define HBA_PORT_IPM_ACTIVE  1
-#define COMMAND_SLOTS 32
-
-#define ATA_DEV_BUSY 0x80
-#define ATA_DEV_DRQ 0x08
-
-#define TRUE  1 
-#define FALSE 0 
+#define COMMAND_SLOTS        32
+#define TRUE                 1 
+#define FALSE                0 
 
 #define BLOCK_BASE_ADDRESS 0x00000100
-#define NUM_BLOCKS 1 
-#define BLOCK_SIZE 4096 
-
-#define REGISTER_OFFSET_BAR_ADDR_5      0x24
-
-#define PCI_CONFIG_ADDRESS 0xCF8
-#define PCI_CONFIG_DATA    0xCFC 
+#define NUM_BLOCKS         1 
+#define BLOCK_SIZE         4
 
 typedef uint8_t  BOOL;
 typedef uint8_t  BYTE;
@@ -53,23 +54,40 @@ uint32_t g_SATA_PORT_INDEX = 0xFFFFFFFF;
 // Start command engine
 void start_cmd(hba_port_t *port)
 {
+    uint64_t count = 0;
     // Wait until CR (bit15) is cleared
-    while (port->cmd & HBA_PxCMD_CR);
+    while (port->cmd & HBA_PxCMD_CR){
+        if(++count == 2500){
+          break;
+        }
+    }
  
     // Set FRE (bit4) and ST (bit0)
     port->cmd |= HBA_PxCMD_FRE;
     port->cmd |= HBA_PxCMD_ST; 
+
+    port->is_rwc = 0;
+    port->ie = 0xffffffff;
 }
  
 // Stop command engine
 void stop_cmd(hba_port_t *port)
 {
+    uint64_t count = 0;
     // Clear ST (bit0)
     port->cmd &= ~HBA_PxCMD_ST;
+
+    // Clear FRE (bit4)
+    port->cmd &= ~HBA_PxCMD_FRE;
  
     // Wait until FR (bit14), CR (bit15) are cleared
     while(1)
     {
+        ++count;
+        if (count == 2500) {
+            kprintf("%d\n");
+            break;
+        }
         if (port->cmd & HBA_PxCMD_FR)
             continue;
         if (port->cmd & HBA_PxCMD_CR)
@@ -78,7 +96,12 @@ void stop_cmd(hba_port_t *port)
     }
  
     // Clear FRE (bit4)
-    port->cmd &= ~HBA_PxCMD_FRE;
+    //port->cmd &= ~HBA_PxCMD_FRE;
+
+    port->cmd = port->cmd & COMMAND_MASK_BIT_ST;
+    port->cmd = port->cmd & ~HBA_PxCMD_CR;
+    port->cmd = port->cmd & COMMAND_MASK_BIT_FRE;
+    port->cmd = port->cmd & COMMAND_MASK_BIT_FR; 
 }
 
 
@@ -280,8 +303,8 @@ BOOL read(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 
 void port_rebase(hba_port_t *port, int portno)
 {
-    //stop_cmd(port);    // Stop command engine
- 
+    stop_cmd(port);    // Stop command engine 
+
     // Command list offset: 1K*portno
     // Command list entry size = 32
     // Command list entry maxim count = 32
@@ -289,24 +312,29 @@ void port_rebase(hba_port_t *port, int portno)
     port->clb = AHCI_BASE + (portno<<10);
     memset((void*)(port->clb), 0, 1024);
  
+
     // FIS offset: 32K+256*portno
     // FIS entry size = 256 bytes per port
     port->fb = AHCI_BASE + (32<<10) + (portno<<8);
     memset((void*)(port->fb), 0, 256);
- 
+
+    port->serr_rwc = 1;
+    port->is_rwc   = 0;
+    port->ie       = 0;
+
     // Command table offset: 40K + 8K*portno
     // Command table size = 256*32 = 8K per port
     hba_cmd_header_t *cmdheader = (hba_cmd_header_t*)(port->clb);
     for (int i=0; i<32; i++)
     {
         cmdheader[i].prdtl = 8;    // 8 prdt entries per command table
-                    // 256 bytes per command table, 64+16+48+16*8
+        // 256 bytes per command table, 64+16+48+16*8
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
         cmdheader[i].ctba = AHCI_BASE + (40<<10) + (portno<<13) + (i<<8);
         memset((void*)cmdheader[i].ctba, 0, 256);
     }
- 
-    //start_cmd(port);    // Start command engine
+
+    start_cmd(port);    // Start command engine
 }
  
 // Check device type
@@ -345,22 +373,21 @@ void probe_port(hba_mem_t *abar)
   uint32_t pi = abar->pi;
   //kprintf("\nabar->cap = %p ghc = %p ir = %p abar->pi = %p\n", abar->cap, abar->ghc, abar->is_rwc, abar->pi);
   int i = 0;
+  int flag = 0;
   while (i<MAX_PORT_CNT)
   {
     if (pi & 1)
     {
       int dt = check_type((hba_port_t *)&abar->ports[i]);
 
-      WORD cmdStatus = (abar->ports[i].cmd) & HBA_PORT_CMD_ST;
-      WORD cmdFre = (abar->ports[i].cmd)&HBA_PORT_CMD_FRE;
-
       if (dt == AHCI_DEV_SATA)
       {
-        //TODO: Fix this check
-        //if(g_SATA_PORT_INDEX == 0xFFFFFFFF || i < 2){
-          g_SATA_PORT_INDEX = i;
+          //TODO: Fix this check
+          if(!flag){
+            g_SATA_PORT_INDEX = i;
+            flag = 1;
+          }
           kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
-        //}
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
@@ -374,33 +401,31 @@ void probe_port(hba_mem_t *abar)
       {
         kprintf("PM drive found at port %d\n", i);
       }
-      if(cmdFre!=0||cmdStatus!=0){
-        if(cmdStatus!=0 && i< 2){
-          abar->ports[i].cmd&=RESET_CMD_ST;
-        }
-        if(cmdFre!=0 && i < 2){
-	      (abar->ports[i].cmd)&=RESET_CMD_FRE;
-        }
-        i--;
-        continue;
-      }
     }
     pi >>= 1;
     i++;
   }
+  
+  // Reset and enable the ahci/interrupt
+  abar->ghc=(uint32_t)(1<<31);
+  abar->ghc=(uint32_t)(1<<0);
+  abar->ghc=(uint32_t)(1<<31);
+  abar->ghc=(uint32_t)(1<<1);
+  
+  uint64_t count = 0;
+  while(++count != 2500);
 
-  //for(int i = 0; i<MAX_PORT_CNT; ++i) {
-  g_SATA_PORT_INDEX = 0;
-  port_rebase(&(abar->ports[g_SATA_PORT_INDEX]), g_SATA_PORT_INDEX);
-  //}
+  pi = abar->pi;
 
-  for(int i = 0;i<=1;i++){
-    while(abar->ports[i].cmd & HBA_PORT_CMD_CR);
-    abar->ports[i].cmd |= HBA_PORT_CMD_FRE;
-    abar->ports[i].cmd |= HBA_PORT_CMD_ST;
-    kprintf("HERE : %d", i);
+  for(int i=0; i< MAX_PORT_CNT; ++i) {
+    //g_SATA_PORT_INDEX = 0;
+    //TODO: do for other ports as wells
+    if((pi & 1) && i == 0) {
+      kprintf("rebasing port %d\n", i);
+      port_rebase(&(abar->ports[i]), i);
+    }
+    pi >>= 1;
   }
-
 }
 
 int str_len(char *ch) {
@@ -453,7 +478,7 @@ void init_ahci() {
       writeBuffer[0] = ptr;
       for(int i=0; i<NUM_BLOCKS; ++i) {
         memset(writeBuffer[0], '\0', BLOCK_SIZE);
-        memset(writeBuffer[0], i+1, BLOCK_SIZE-1);
+        memset(writeBuffer[0], 0x32+i+1, BLOCK_SIZE-1);
         g_SATA_PORT_INDEX = 0;
         write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[0]);
         wstartl = wstartl + 8;
@@ -463,12 +488,12 @@ void init_ahci() {
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
         int readCount = 0;
-        //char byteVal = '\0';
+        char byteVal = '\0';
         read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
-        //byteVal = *readBuffer[0];
+        byteVal = *readBuffer[0];
         rstartl = rstartl + 8;
         readCount = readCount + str_len(readBuffer[0]);
-        //kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
         //kprintf("Read Value = %s\n", readBuffer[0]);
       }
     } 
