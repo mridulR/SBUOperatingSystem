@@ -333,7 +333,6 @@ void port_rebase(hba_port_t *port, int portno)
         cmdheader[i].ctba = AHCI_BASE + (40<<10) + (portno<<13) + (i<<8);
         memset((void*)cmdheader[i].ctba, 0, 256);
     }
-
     start_cmd(port);    // Start command engine
 }
  
@@ -464,6 +463,7 @@ void init_ahci() {
     unsigned long bar5 = (unsigned long)(devInfo->bar5);
     abar = (hba_mem_t *)bar5;
     probe_port(abar);
+
     if(g_SATA_PORT_INDEX != -1) {
       char *writeBuffer[1];
       
