@@ -190,9 +190,14 @@ void HandleSignedInt(const int i_argVal, char* currAddr) {
 
 void HandleAddress(uint64_t addr, char* currAddr){
 
-  char ch[100]= {0}; 
+  char ch[100] = {48}; 
   uint64_t num = addr;
   int i = 0, rem = 0;
+
+  *currAddr++ = '0';
+  *currAddr++ = 0x07;
+  *currAddr++ = 'x';
+  *currAddr++ = 0x07;
 
   if(num == 0) {
     *currAddr++ = '0';
@@ -211,8 +216,7 @@ void HandleAddress(uint64_t addr, char* currAddr){
     }
     num=num/16;
   }
-
-  for (int j = i; j >= 0; j--) {
+ for (int j = i-1; j >= 0; j--) {
     //printf("%c", ch[j]);
     *currAddr++ = ch[j];
     *currAddr++ = 0x07;

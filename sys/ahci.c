@@ -85,7 +85,7 @@ void stop_cmd(hba_port_t *port)
     {
         ++count;
         if (count == 2500) {
-            kprintf("%d\n");
+            //kprintf("%d\n");
             break;
         }
         if (port->cmd & HBA_PxCMD_FR)
@@ -116,7 +116,7 @@ int find_cmdslot(hba_port_t *port)
             return i;
         slots >>= 1;
     }
-    kprintf("Cannot find free command list entry\n");
+    //kprintf("Cannot find free command list entry\n");
     return -1;
 }
 
@@ -125,7 +125,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
     port->is_rwc = (DWORD)-1;        // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
     int slot = find_cmdslot(port);
-    kprintf("Write Checkpoint 0\n");
+    //kprintf("Write Checkpoint 0\n");
     if (slot == -1)
         return FALSE;
  
@@ -135,7 +135,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
     cmdheader->w = 1;        // Write from device
     cmdheader->prdtl = (WORD)((count-1)>>4) + 1;    // PRDT entries count
  
-    kprintf("Write Checkpoint 1\n");
+    //kprintf("Write Checkpoint 1\n");
     hba_cmd_tbl_t *cmdtbl = (hba_cmd_tbl_t*)(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(hba_cmd_tbl_t) +
          (cmdheader->prdtl-1)*sizeof(hba_prdt_entry_t));
@@ -173,7 +173,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
  
     cmdfis->count = count;
  
-    kprintf("Write Checkpoint 2\n");
+    //kprintf("Write Checkpoint 2\n");
     // The below loop waits until the port is no longer busy before issuing a new command
     while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
     {
@@ -184,7 +184,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
         kprintf("Port is hung\n");
         return FALSE;
     }
-    kprintf("Write Checkpoint 3\n");
+    //kprintf("Write Checkpoint 3\n");
  
     port->ci = 1<<slot;    // Issue command
  
@@ -208,7 +208,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
         kprintf("Read disk error\n");
         return FALSE;
     }
-    kprintf("Write ret true\n");
+    //kprintf("Write ret true\n");
  
     return TRUE;
 }
@@ -386,19 +386,19 @@ void probe_port(hba_mem_t *abar)
             g_SATA_PORT_INDEX = i;
             flag = 1;
           }
-          kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
+          //kprintf("SATA drive found at port %d and g_SATA_PORT_INDEX = %d \n", i, g_SATA_PORT_INDEX);
       }
       else if (dt == AHCI_DEV_SATAPI)
       {
-        kprintf("SATAPI drive found at port %d\n", i);
+        //kprintf("SATAPI drive found at port %d\n", i);
       }
       else if (dt == AHCI_DEV_SEMB)
       {
-        kprintf("SEMB drive found at port %d\n", i);
+        //kprintf("SEMB drive found at port %d\n", i);
       }
       else if (dt == AHCI_DEV_PM)
       {
-        kprintf("PM drive found at port %d\n", i);
+        //kprintf("PM drive found at port %d\n", i);
       }
     }
     pi >>= 1;
@@ -420,7 +420,7 @@ void probe_port(hba_mem_t *abar)
     //g_SATA_PORT_INDEX = 0;
     //TODO: do for other ports as wells
     if((pi & 1) && i == 0) {
-      kprintf("rebasing port %d\n", i);
+      //kprintf("rebasing port %d\n", i);
       port_rebase(&(abar->ports[i]), i);
     }
     pi >>= 1;
@@ -448,15 +448,15 @@ void init_ahci() {
 
     if(devInfo->classCode == 1  && devInfo->subClass == 6) {
  
-       kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
+       /*kprintf("\nAHCI VendorID: %d DeviceId: %d Class: %d SubClass: %d \nBar[4]: %p Bar[5]: %p\n",\
                 devInfo->vendorId, devInfo->deviceId, devInfo->classCode,\
-               devInfo->subClass, devInfo->bar4, devInfo->bar5);
+               devInfo->subClass, devInfo->bar4, devInfo->bar5);*/
        break;
      }
   }
 
   if(!devInfo)
-      kprintf("\n AHCI NOT FOUND !!!");
+      //kprintf("\n AHCI NOT FOUND !!!");
 
   if(devInfo!= NULL) {
 
@@ -488,12 +488,12 @@ void init_ahci() {
       for(int i = 0; i< NUM_BLOCKS; ++i) {
         readBuffer[i] = NULL;
         int readCount = 0;
-        char byteVal = '\0';
+        //char byteVal = '\0';
         read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
-        byteVal = *readBuffer[0];
+        //byteVal = *readBuffer[0];
         rstartl = rstartl + 8;
         readCount = readCount + str_len(readBuffer[0]);
-        kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
+        //kprintf("BlockCount= %d ByteValue = %c BytesRead = %d \n", i+1, byteVal, readCount);
         //kprintf("Read Value = %s\n", readBuffer[0]);
       }
     } 
