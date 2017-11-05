@@ -54,10 +54,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   init_phys_page(modulep, (uint64_t)physbase, (uint64_t)physfree);
 
   // formatting welcome screen
-  setUpWelcomeScreen();
+  /*setUpWelcomeScreen();
   init_pci_devInfo();
   init_ahci();
-  enable_Interrupts();
+  enable_Interrupts();*/
 
   while(1) {
   }
@@ -76,7 +76,7 @@ void boot(void)
     :"=g"(loader_stack)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
-  init_gdt();
+  /*init_gdt();
   
   // Initialize IDT and load the Idtr
   init_Idt();
@@ -90,7 +90,7 @@ void boot(void)
   //outportb(0x20, 0x20);
   // Start the timer 
  
-  init_ps2_controller();
+  init_ps2_controller();*/
 
   //enable_Interrupts();
 

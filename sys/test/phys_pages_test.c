@@ -67,9 +67,23 @@ void test_physical_pages(uint64_t kern_start, uint64_t kern_end) {
           (uint64_t)s_phys_page[PHYS_HIGH_PAGE_COUNT-1].next);
 
   if((uint64_t)&kernmem != 0xFFFFFFFF80200000) {
-      kprintf("TEST FAIL: kernmem adress changed from 0xFFFFFFFF80200000 to %p", &kernmem);
+      kprintf("TEST FAIL: kernmem adress changed from 0xFFFFFFFF80200000 to %p\n", &kernmem);
   }
 
   return;
+}
+
+
+void test_allocate_deallocate_page() {
+    if(s_free_page_count == 0) {
+         kprintf("KERNEL PANIC: Out of Memory !!!\n");
+         return;
+    }
+    uint64_t addr = allocate_phys_page();
+    kprintf("First  Page at: %p\n", addr);
+    addr = allocate_phys_page();
+    kprintf("Second Page at: %p\n", addr);
+    addr = allocate_phys_page();
+    kprintf("Third Page at: %p\n", addr);
 }
 

@@ -1,4 +1,5 @@
 #include <sys/phys_pages.h>
+#include <sys/page_table.h>
 #include <sys/test/test.h>
 
 #define PHYS_HIGH_BASE_ADDR    0x100000
@@ -48,20 +49,26 @@ void init_phys_page(uint32_t *modulep, uint64_t kern_start, uint64_t kern_end) {
   }
 
   s_cur_page_index = 0;
+  s_free_page_count = 0;
 
-  uint64_t start = s_phys_base_addr;
+  uint64_t start = kern_end;
+  s_phys_base_addr = kern_end;
   uint64_t end = s_phys_limit_addr;
+  kprintf("Start: %p End: %p", start, end);
   while(start < end) {
       start = start + (uint64_t)PAGE_SIZE;
       if(start >= kern_start && start <= kern_end) {
         continue;
       }
       s_phys_page[s_free_page_count++].next = (Phys_page *)start; 
+
       s_max_page_count = s_free_page_count;
   }
   s_phys_page[s_free_page_count].next = NULL;
   
-  test_physical_pages(kern_start, kern_end);
+  //test_physical_pages(kern_start, kern_end);
+  //test_allocate_deallocate_page();
+  init_kernel_page_table(kern_start, kern_end);
   return; 
 }
 
@@ -72,9 +79,10 @@ uint64_t get_phys_addr(uint64_t index) {
 uint64_t get_first_free_page() {
     if(s_free_page_count == 0) {
          kprintf("KERNEL PANIC: Out of Memory !!!");
+         return 0;
     }
     uint64_t cur_addr = (uint64_t)s_phys_base_addr + (uint64_t)((s_cur_page_index) * PAGE_SIZE);
-    uint64_t next_addr = (uint64_t)s_phys_base_addr + (uint64_t)s_phys_page[s_cur_page_index].next;
+    uint64_t next_addr = (uint64_t)s_phys_page[s_cur_page_index].next;
     s_cur_page_index = s_cur_page_index + (next_addr - cur_addr)/ PAGE_SIZE;
     s_free_page_count--;
     return cur_addr;

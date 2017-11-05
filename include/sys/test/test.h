@@ -2,5 +2,5 @@
 #define _TEST_H
 
 void test_physical_pages(uint64_t kern_start, uint64_t kern_end);
-
+void test_allocate_deallocate_page();
 #endif
