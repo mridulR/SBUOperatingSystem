@@ -10,15 +10,16 @@
 #include <sys/ahci.h>
 #include <sys/ps2Controller.h>
 #include <sys/phys_pages.h> 
+#include <sys/kern_process.h>
 
 #define true 1
 #define INITIAL_STACK_SIZE 4096
+
 
 extern Idtr s_Idtr;
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
-
 
 uint64_t current_width = 0;
 uint64_t current_height = 0;
@@ -27,6 +28,10 @@ char *KEYPRESS_BANNER = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 0));
 char *CTRL_KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 21));
 char *KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 23));
 
+extern void function_1();
+extern void function_2();
+extern task_struct* s_task_1;
+extern task_struct* s_task_2;
 
 void setUpWelcomeScreen() {
   char *trav = TIME_ADDRESS - 16;
@@ -54,13 +59,32 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   init_phys_page(modulep, (uint64_t)physbase, (uint64_t)physfree);
 
   // formatting welcome screen
-  /*setUpWelcomeScreen();
-  init_pci_devInfo();
+  setUpWelcomeScreen();
+  /*init_pci_devInfo();
   init_ahci();
   enable_Interrupts();*/
 
-  while(1) {
-  }
+  s_task_1 = create_task();
+  s_task_1->rsp = (uint64_t)&(s_task_1->kstack[4096]);
+  s_task_2 = create_task();
+  s_task_2->rsp = (uint64_t)&(s_task_2->kstack[4096]);
+
+  __asm__ __volatile__
+  ( 
+    "movq %0, %%rsp\n"
+    :
+    :"r" (s_task_1->rsp)
+  ); 
+  
+  __asm__ __volatile__
+  ( "pushq %0\n"
+    "ret"
+    : 
+    :"r" (&function_1)
+  );
+
+  while(1) { }
+
 }
 
 void boot(void)
@@ -76,7 +100,7 @@ void boot(void)
     :"=g"(loader_stack)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
-  /*init_gdt();
+  init_gdt();
   
   // Initialize IDT and load the Idtr
   init_Idt();
@@ -90,7 +114,7 @@ void boot(void)
   //outportb(0x20, 0x20);
   // Start the timer 
  
-  init_ps2_controller();*/
+  init_ps2_controller();
 
   //enable_Interrupts();
 

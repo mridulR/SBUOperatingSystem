@@ -2,7 +2,8 @@
 #define __KPRINTF_H
 #include <sys/types.h>
 
-#define VIDEO_BUFFER_BASE_ADDR 0xb8000
+#define VIDEO_BUFFER_BASE_ADDR      0xFFFFFFFF800b8000
+#define VIDEO_BUFFER_BASE_PHYS_ADDR 0xb8000
 #define VIDEO_BUFFER_MAX_LIMIT  0xb8f00
 
 extern char* TIME_ADDRESS;

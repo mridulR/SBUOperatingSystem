@@ -68,7 +68,7 @@ void init_phys_page(uint32_t *modulep, uint64_t kern_start, uint64_t kern_end) {
   
   //test_physical_pages(kern_start, kern_end);
   //test_allocate_deallocate_page();
-  init_kernel_page_table(kern_start, kern_end);
+  init_kernel_page_table(kern_start, kern_end, s_phys_base_addr, s_phys_limit_addr);
   return; 
 }
 
