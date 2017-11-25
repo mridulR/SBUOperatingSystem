@@ -3,6 +3,7 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 #include <sys/memcpy.h>
+#include <sys/gdt.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -29,116 +30,55 @@ task_struct* create_task() {
     return task;
 }
 
+void switch_to(task_struct *cur, task_struct *next);
 
-void switch_to(task_struct *cur, task_struct *next) {
+void first_switch_to(task_struct *cur, task_struct *next);
 
-    __asm__ __volatile__         
-    (                            
-       "pushq %%rax\n"
-       "pushq %%rbx\n"
-       "pushq %%rcx\n"
-       "pushq %%rdx\n"
-       "pushq %%rbp\n"
-       "pushq %%rdi\n"
-       "pushq %%rsi\n"
-       "pushq %%r8\n"
-       "pushq %%r9\n"
-       "pushq %%r10\n"
-       "pushq %%r11\n"
-       "pushq %%r12\n"
-       "pushq %%r13\n"
-       "pushq %%r14\n"
-       "pushq %%r15\n"
-       "movq %%rsp, %0\n"
-       :"=r" (cur->rsp)
-       :
-     );
-
-     __asm__ __volatile__
-     (
-       "movq %0, %%rsp\n"
-       :
-       :"r" (next->rsp)    
-      );
-
-      __asm__ __volatile__
-      (
-       "popq %%r15\n"
-       "popq %%r14\n"
-       "popq %%r13\n"
-       "popq %%r12\n"
-       "popq %%r11\n"
-       "popq %%r10\n"
-       "popq %%r9\n"
-       "popq %%r8\n"
-       "popq %%rsi\n"
-       "popq %%rdi\n"
-       "popq %%rbp\n"
-       "popq %%rdx\n"
-       "popq %%rcx\n"
-       "popq %%rbx\n"
-       "popq %%rax\n"
-       "retq"
-       :
-       : 
-     );
-     return;
+void switch_to_ring3() {
+    set_tss_rsp((uint64_t *)s_task_2->rsp);
+    __asm__ __volatile__("cli");
+    __asm__ __volatile__("iretq");
 }
 
-void function_2() {
+void test_user_function() {
+    /*kprintf(" Did I Crash?");
+    __asm__ __volatile__ 
+    (
+        "cli;\n" 
+        :
+        :
+    );*/
+    int a = 10;
+    int b = 20;
+    int c;
+    c = a + b;
+    b = c;
+    __asm__ __volatile__ ("iretq\n");
+}
+
+void function_2(int d) {
+    int a = 20;
     kprintf("\nIn Process 2");
     switch_to(s_task_2, s_task_1);
+    int b = 60;
     kprintf("\nResuming Process 2.1");
     switch_to(s_task_2, s_task_1);
+    int c = a + b;
     kprintf("\nResuming Process 2.2");
+    kprintf(" c = %d", c);
     switch_to(s_task_2, s_task_1);
     kprintf("\nResuming Process 2.3");
+    kprintf(" c = %d", c);
+    //set_tss_rsp((uint64_t *)s_task_1->rsp);
+    switch_to_ring3();
+    //test_user_function();
     while(1) { }
-    return;
-}
-
-
-void first_switch(task_struct *cur, task_struct *next) {
-    __asm__ __volatile__
-    ( 
-       "pushq %%rax\n"
-       "pushq %%rbx\n"
-       "pushq %%rcx\n"
-       "pushq %%rdx\n"
-       "pushq %%rbp\n"
-       "pushq %%rdi\n"
-       "pushq %%rsi\n"
-       "pushq %%r8\n"
-       "pushq %%r9\n"
-       "pushq %%r10\n"
-       "pushq %%r11\n"
-       "pushq %%r12\n"
-       "pushq %%r13\n"
-       "pushq %%r14\n"
-       "pushq %%r15\n"
-       "movq %%rsp, %0\n"
-       :"=r" (cur->rsp)
-       :
-    );
-    __asm__ __volatile__
-    (
-       "movq %0, %%rsp\n"
-       :
-       :"r" (next->rsp)
-    );
-
-    __asm__ __volatile__
-    ( "pushq %0\n"
-      "retq"
-      : 
-      :"r" (&function_2)
-    );
     return;
 }
 
 void function_1() {
     kprintf("\nIn Process 1");
-    first_switch(s_task_1, s_task_2);
+    first_switch_to(s_task_1, s_task_2);
     kprintf("\nIn Process 1.1");
     switch_to(s_task_1, s_task_2);
     kprintf("\nResuming Process 1.2");
