@@ -2,6 +2,7 @@
 #include <sys/page_table.h>
 #include <sys/phys_pages.h>
 #include <sys/kmalloc.h>
+#include <sys/idt.h>
 
 #define PAGE_SIZE                 0x1000
 
@@ -122,6 +123,7 @@ void init_kernel_page_table(uint64_t kern_start, uint64_t kern_end, uint64_t
     map_vaddr_to_physaddr(VIDEO_BUFFER_BASE_ADDR, VIDEO_BUFFER_BASE_PHYS_ADDR);
     set_cr3_register((PML4 *)cr3);
     kprintf("\n HELLO WORLD !!! \n");
+    //enable_Interrupts();
     /*uint64_t addr = allocate_phys_page();
     uint64_t *ptr = (uint64_t *)(KERN_BASE + addr);
     *ptr = 25;

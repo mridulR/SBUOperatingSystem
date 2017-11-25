@@ -7,6 +7,7 @@
 #include <sys/kstring.h>
 #include <sys/tarfs.h>
 #include <sys/gdt.h>
+#include <sys/idt.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -37,26 +38,24 @@ void switch_to(task_struct *cur, task_struct *next);
 
 void first_switch_to(task_struct *cur, task_struct *next);
 
-void switch_to_ring3() {
-    set_tss_rsp((uint64_t *)s_task_2->rsp);
-    __asm__ __volatile__("cli");
-    __asm__ __volatile__("iretq");
-}
+void switch_to_ring3();
 
 void test_user_function() {
-    /*kprintf(" Did I Crash?");
-    __asm__ __volatile__ 
+    kprintf(" Did I Crash?");
+    while(1) {}
+    //kprintf(" Did I Crash?");
+    /*__asm__ __volatile__ 
     (
         "cli;\n" 
         :
         :
-    );*/
+    );
     int a = 10;
     int b = 20;
     int c;
     c = a + b;
     b = c;
-    __asm__ __volatile__ ("iretq\n");
+    __asm__ __volatile__ ("iretq\n");*/
 }
 
 void function_2(int d) {
@@ -74,8 +73,9 @@ void function_2(int d) {
 
     kprintf("\nResuming Process 2.3");
     kprintf(" c = %d", c);
-    //set_tss_rsp((uint64_t *)s_task_1->rsp);
-    switch_to_ring3();
+    //enable_Interrupts();
+    set_tss_rsp((uint64_t *)s_task_1->rsp);
+    //switch_to_ring3();
     //test_user_function();
     while(1) { }
     return;

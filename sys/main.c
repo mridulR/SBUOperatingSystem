@@ -57,13 +57,26 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("Phybase %p  physfree %p kernmem %p\n", (uint64_t) physbase, (uint64_t)physfree, &kernmem);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
    
+
+  // Initialize IDT and load the Idtr
+  init_Idt();
+
+  // Initialize the PIC 
+  init_pic(PROT_MODE_MASTER_PIC_VECTOR_OFFSET, PROT_MODE_SLAVE_PIC_VECTOR_OFFSET);
+
+  // Initialize the PIT
+  init_pit();
+  
+  //Initialize the PS2 controller 
+  init_ps2_controller();
+
+  //Initialize the Physical Pages
   init_phys_page(modulep, (uint64_t)physbase, (uint64_t)physfree);
 
   // formatting welcome screen
   setUpWelcomeScreen();
   /*init_pci_devInfo();
-  init_ahci();
-  enable_Interrupts();*/
+  init_ahci();*/
 
   s_task_1 = create_task();
   s_task_1->rsp = (uint64_t)&(s_task_1->kstack[4096]);
@@ -79,7 +92,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
   __asm__ __volatile__
   ( "pushq %0\n"
-    "ret"
+    "ret\n"
     : 
     :"r" (&function_1)
   );
@@ -104,7 +117,7 @@ void boot(void)
   );
   init_gdt();
   
-  // Initialize IDT and load the Idtr
+  /*// Initialize IDT and load the Idtr
   init_Idt();
 
   // Initialize the PIC 
@@ -116,7 +129,7 @@ void boot(void)
   //outportb(0x20, 0x20);
   // Start the timer 
  
-  init_ps2_controller();
+  init_ps2_controller();*/
 
   //enable_Interrupts();
 

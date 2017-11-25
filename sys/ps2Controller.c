@@ -3,6 +3,7 @@
 #include <sys/pic.h>
 #include <sys/kprintf.h>
 #include <sys/asm_util.h>
+#include <sys/idt.h>
 
 //! extern all the pic utility functions which PS2 Controller will use 
 extern void set_ir_in_idt(uint16_t interrupt_num, IRQHandler interrupt_service_routine);
@@ -73,4 +74,5 @@ void helper_keyboard_handler() {
 
 void init_ps2_controller() {
   set_ir_in_idt(33, keyboard_interrupt_service_routine);
+  //load_idt();
 }

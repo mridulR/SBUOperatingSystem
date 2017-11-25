@@ -38,11 +38,24 @@ void disable_Interrupts() {
   return;  
 }
 
+extern void pit_interrupt_service_routine();
+
+extern void keyboard_interrupt_service_routine();
+
 void helper_interrupt_service_routine() {
+  kprintf("DEFAULT HANDLER CALLED");
+  while(1) {}
   __asm__ __volatile__ ( "iretq");
 }
 
 void default_interrupt_service_routine();
+
+void load_idt() {
+  __asm__ __volatile__
+  (
+      "lidt (s_Idtr)\n"
+  );
+}
 
 // Initializes IDT and IDTR
 void init_Idt() {
@@ -61,8 +74,12 @@ void init_Idt() {
       set_interrupt_service_routine(i, INTERRUPT_GATE_TYPE_ATTR, default_interrupt_service_routine);
   }
   
+  set_interrupt_service_routine(32,INTERRUPT_GATE_TYPE_ATTR, pit_interrupt_service_routine);
+  set_interrupt_service_routine(33, INTERRUPT_GATE_TYPE_ATTR, keyboard_interrupt_service_routine);
+
   // Load the IDT
-  __asm__ __volatile__
+  //load_idt();
+   __asm__ __volatile__
   (
       "lidt (s_Idtr)\n"
   );
