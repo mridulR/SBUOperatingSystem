@@ -40,4 +40,6 @@ void enable_Interrupts();
 
 void test_interrupt_zero();
 
+void load_idt();
+
 #endif

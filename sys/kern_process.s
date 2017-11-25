@@ -74,7 +74,6 @@ first_switch_to:
 
 #.global switch_to_ring3
 #switch_to_ring3:
-#     cli
 #     movq $0x23, %rax
 #     movq %rax, %ds
 #     movq %rax, %es
@@ -86,4 +85,4 @@ first_switch_to:
 #     pushfq
 #     pushq $0x1B
 #     pushq test_user_function 
-#     iret
+#     iretq

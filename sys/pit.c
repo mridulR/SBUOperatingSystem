@@ -2,6 +2,7 @@
 #include <sys/pic.h>
 #include <sys/kprintf.h>
 #include <sys/asm_util.h>
+#include <sys/idt.h>
 
 //! Just for referencing in future.
 //! Bookmark the link - https://en.wikibooks.org/wiki/X86_Assembly/Programmable_Interval_Timer
@@ -38,6 +39,7 @@ void helper_calculate_timer() {
 void init_pit() {
 
   set_ir_in_idt(32, pit_interrupt_service_routine);
+  //load_idt();
 
   uint16_t base_frequency = 4000;
   uint64_t max_frequency = 1193181;
