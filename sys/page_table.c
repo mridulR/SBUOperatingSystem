@@ -21,7 +21,8 @@ PDPT* create_pdpt_table(PML4* pml4Table, uint16_t index ){
     PDPT* pdpt_table  = (PDPT *)allocate_phys_page();
     uint64_t entry = (uint64_t)pdpt_table;    
     //kprintf("PDPT Table: %p \n", (uint64_t)pdpt_table);
-    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W | PTE_U);
+    entry |= (PTE_P | PTE_W );
     //kprintf("PDPT entry with Offset: %p \n", (uint64_t)entry);
     uint64_t vaddr_pml4 = KERN_BASE + (uint64_t)pml4Table;
     //kprintf("PML4 Vaddr: %p ", (uint64_t)vaddr_pml4);
@@ -33,7 +34,8 @@ PD* create_pd_table(PDPT* pdptTable, uint16_t index ){
     PD* pd_table  = (PD *)allocate_phys_page();
     //kprintf("PD Table: %p \n", (uint64_t)pd_table);
     uint64_t entry = (uint64_t)pd_table;    
-    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W | PTE_U);
+    entry |= (PTE_P | PTE_W );
     //kprintf("PD entry with Offset: %p \n", (uint64_t)entry);
     uint64_t vaddr_pdpt = KERN_BASE + (uint64_t)pdptTable;
     //kprintf("PDPT Vaddr: %p ", (uint64_t)vaddr_pdpt);
@@ -45,7 +47,8 @@ PT* create_pt_table(PD* pdTable, uint16_t index ){
     PT* pt_table  = (PT *)allocate_phys_page();
     //kprintf("PT Table: %p \n", (uint64_t)pt_table);
     uint64_t entry = (uint64_t)pt_table;    
-    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W | PTE_U);
+    entry |= (PTE_P | PTE_W );
     //kprintf("PT entry with Offset: %p \n", (uint64_t)entry);
     uint64_t vaddr_pd = KERN_BASE + (uint64_t)pdTable;
     //kprintf("PD Vaddr: %p ", (uint64_t)vaddr_pd);
@@ -103,7 +106,8 @@ void init_kernel_page_table(uint64_t kern_start, uint64_t kern_end, uint64_t
     for(;vaddr <= kern_vaddr_end; vaddr+= PAGE_SIZE, phyaddr+=PAGE_SIZE) {
         uint16_t ptIndex = PT_ENTRY_INDEX(vaddr); 
         uint64_t entry = (uint64_t)phyaddr;    
-        entry |= (PTE_P | PTE_W | PTE_U);
+        //entry |= (PTE_P | PTE_W | PTE_U);
+        entry |= (PTE_P | PTE_W );
         //kprintf(" e= %p ",entry);
         ((PT*)vaddr_pt)->pt_entries[ptIndex] = (uint64_t)entry;
     }
@@ -200,7 +204,8 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
     }
     uint64_t vaddr_pt = KERN_BASE + (uint64_t)pt_table;
     uint64_t entry = (uint64_t)physaddr;    
-    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W | PTE_U);
+    entry |= (PTE_P | PTE_W );
     //kprintf(" Virtual PT table = %p  Entry = %p  ptIndex = %p", (uint64_t)vaddr_pt, (uint64_t)entry, ptIndex);
     ((PT*)vaddr_pt)->pt_entries[ptIndex] = (uint64_t)entry;
     //kprintf(" Vaddr: %p, Paddr= %p ", vaddr, physaddr);
