@@ -82,21 +82,21 @@ void load_idt() {
   );
 }
 
-int write_1(int fd, const void *buf, int size)                                                                                    {
-    int ret;
-    __asm__ __volatile__
-    (   
-        "syscall"
-        : "=a" (ret)
-        : "0"(__NR_write_64), "D"(fd), "S"(buf), "d"(size)
-        : "cc", "rcx", "r11", "memory"
-    ); 
-    return ret;
-}
+void syscall_handler();
 
-void syscall_handler() {
-    kprintf(" Invoked syscall handler !!!");
-    __asm__ __volatile__("iretq\n");
+void helper_syscall_handler() {
+    uint64_t syscallNum = 0;
+    uint64_t arg2 = 0;
+    __asm__ __volatile__ 
+    (  "movq %%rsi, %0\n"
+       "movq %%rdi, %1\n"
+       :"=r"(syscallNum), "=r"(arg2)
+       :
+    );
+
+    kprintf(" Invoked syscall handler !!! SyscallNum = %p Arg2= %p ", syscallNum, arg2);
+    return;
+    //__asm__ __volatile__("iretq\n");
     //write_1(1, "WRITE TRIGGERED !!!",19);
 }
 

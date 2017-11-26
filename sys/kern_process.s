@@ -70,3 +70,7 @@ first_switch_to:
     call function_2
     retq
 
+#.global test_user_function
+#test_user_function:
+#    int $0x80
+#    iretq

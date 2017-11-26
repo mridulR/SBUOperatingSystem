@@ -34,15 +34,21 @@ task_struct* create_task() {
     return task;
 }
 
-extern void syscall_handler();
-
 void switch_to(task_struct *cur, task_struct *next);
 
 void first_switch_to(task_struct *cur, task_struct *next);
 
-void test_user_function() {
-
+void test_user_function()
+{
     kprintf(" Did I Crash?");
+    
+    __asm__ __volatile__
+    (
+      "movq $0x20, %%rsi\n"
+      "movq $0x30, %%rdi\n"
+      :
+      :
+    );
 
     __asm__ __volatile__("int $0x80\n"); 
 
