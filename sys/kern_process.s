@@ -70,19 +70,3 @@ first_switch_to:
     call function_2
     retq
 
-.global test_user_function
-
-#.global switch_to_ring3
-#switch_to_ring3:
-#     movq $0x23, %rax
-#     movq %rax, %ds
-#     movq %rax, %es
-#     movq %rax, %fs
-#     movq %rax, %gs
-#     movq %rsp, %rax
-#     pushq $0x23
-#     pushq %rax
-#     pushfq
-#     pushq $0x1B
-#     pushq test_user_function 
-#     iretq
