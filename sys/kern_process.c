@@ -22,25 +22,31 @@ task_struct* create_task() {
     }
     task->pid = s_cur_pid++;
     task->pid = 1;
-    task->rsp = 0;
+    task->kernel_rsp = 0;
+    task->user_rsp = 0;
     task->kstack = kmalloc(PAGE_SIZE);
     memset(task->kstack, 0, PAGE_SIZE);
+    task->ustack = kmalloc(PAGE_SIZE);
+    memset(task->ustack, 0, PAGE_SIZE);
     task->exit_status = 0;
     task->state = RUNNING;
     memcpy(&(task->name),"Process", 7);
     return task;
 }
 
+extern void syscall_handler();
+
 void switch_to(task_struct *cur, task_struct *next);
 
 void first_switch_to(task_struct *cur, task_struct *next);
 
-void switch_to_ring3();
-
 void test_user_function() {
+
     kprintf(" Did I Crash?");
+
+    __asm__ __volatile__("int $0x80\n"); 
+
     while(1) {}
-    //kprintf(" Did I Crash?");
     /*__asm__ __volatile__ 
     (
         "cli;\n" 
@@ -53,6 +59,27 @@ void test_user_function() {
     c = a + b;
     b = c;
     __asm__ __volatile__ ("iretq\n");*/
+}
+
+void switch_to_ring3() {
+
+    set_tss_rsp((uint64_t *)s_task_1->kernel_rsp);
+
+    __asm__ __volatile__
+    (  "pushq $0x23\n"
+       "pushq %0\n"
+       "pushfq\n"
+       "pushq $0x2b\n"
+       :
+       :"r" (s_task_2->user_rsp)
+    );
+    
+    __asm__ __volatile__ 
+    (   "pushq %0\n"
+        "iretq\n"
+        :
+        :"r" (&test_user_function)
+    );
 }
 
 void function_2(int d) {
@@ -68,9 +95,9 @@ void function_2(int d) {
     switch_to(s_task_2, s_task_1);
     kprintf("\nResuming Process 2.3");
     kprintf(" c = %d", c);
-    //enable_Interrupts();
-    set_tss_rsp((uint64_t *)s_task_1->rsp);
-    //switch_to_ring3();
+    uint8_t *ptr = (uint8_t *)0xFFFFFFFF802000B0;
+    kprintf(" Value = %d", *ptr);
+    switch_to_ring3();
     //test_user_function();
     while(1) { }
     return;

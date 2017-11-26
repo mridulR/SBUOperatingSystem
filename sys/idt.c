@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/asm_util.h>
 
+#define __NR_write_64 1
+
 /* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
                        changed. Also system calls can be executed in userspace (ring 3, see this) 
                        without misfeasance using the ARPL (Adjust Requested Privilege Level) instruction.
@@ -24,9 +26,9 @@ void enable_Interrupts() {
   //Disable ISR's first
   __asm__ __volatile__
   (
-    "sti"
+    "sti\n"
+    "ret\n"
   );
-  return;  
 }
 
 void disable_Interrupts() {
@@ -42,10 +44,33 @@ extern void pit_interrupt_service_routine();
 
 extern void keyboard_interrupt_service_routine();
 
+void general_permission_fault() {
+    kprintf("GENERAL PERMISSION FAULT !!!");
+    uint64_t ret = 0;
+    __asm__ __volatile__ 
+    (  "movq %%cr2, %0\n"
+       :"=r"(ret)
+       :
+    );
+    while(1) {}
+}
+
+void general_page_fault() {
+    kprintf("GENERAL PAGE FAULT !!!");
+    uint64_t ret = 0;
+    __asm__ __volatile__ 
+    (  "movq %%cr2, %0\n"
+       :"=r"(ret)
+       :
+    );
+    kprintf("CR2 Value: %p", ret);
+    while(1) {}
+}
+
 void helper_interrupt_service_routine() {
-  kprintf("DEFAULT HANDLER CALLED");
+  kprintf("\nDEFAULT INTERRUPT HANDLER CALLED: ");
+
   while(1) {}
-  __asm__ __volatile__ ( "iretq");
 }
 
 void default_interrupt_service_routine();
@@ -55,6 +80,24 @@ void load_idt() {
   (
       "lidt (s_Idtr)\n"
   );
+}
+
+int write_1(int fd, const void *buf, int size)                                                                                    {
+    int ret;
+    __asm__ __volatile__
+    (   
+        "syscall"
+        : "=a" (ret)
+        : "0"(__NR_write_64), "D"(fd), "S"(buf), "d"(size)
+        : "cc", "rcx", "r11", "memory"
+    ); 
+    return ret;
+}
+
+void syscall_handler() {
+    kprintf(" Invoked syscall handler !!!");
+    __asm__ __volatile__("iretq\n");
+    //write_1(1, "WRITE TRIGGERED !!!",19);
 }
 
 // Initializes IDT and IDTR
@@ -74,9 +117,14 @@ void init_Idt() {
       set_interrupt_service_routine(i, INTERRUPT_GATE_TYPE_ATTR, default_interrupt_service_routine);
   }
   
-  set_interrupt_service_routine(32,INTERRUPT_GATE_TYPE_ATTR, pit_interrupt_service_routine);
+  set_interrupt_service_routine(32, INTERRUPT_GATE_TYPE_ATTR, pit_interrupt_service_routine);
   set_interrupt_service_routine(33, INTERRUPT_GATE_TYPE_ATTR, keyboard_interrupt_service_routine);
-
+  set_interrupt_service_routine(13, INTERRUPT_GATE_TYPE_ATTR, general_permission_fault);
+  set_interrupt_service_routine(14, INTERRUPT_GATE_TYPE_ATTR, general_page_fault);
+  set_interrupt_service_routine(127, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
+  set_interrupt_service_routine(128, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
+  s_Idtd[127].type = 0xEE;
+  s_Idtd[128].type = 0xEE;
   // Load the IDT
   //load_idt();
    __asm__ __volatile__

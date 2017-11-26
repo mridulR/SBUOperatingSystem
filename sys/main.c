@@ -72,21 +72,25 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //Initialize the Physical Pages
   init_phys_page(modulep, (uint64_t)physbase, (uint64_t)physfree);
 
+  enable_Interrupts();
+
   // formatting welcome screen
   setUpWelcomeScreen();
   /*init_pci_devInfo();
   init_ahci();*/
 
   s_task_1 = create_task();
-  s_task_1->rsp = (uint64_t)&(s_task_1->kstack[4096]);
+  s_task_1->kernel_rsp = (uint64_t)&(s_task_1->kstack[4096]);
+  s_task_1->user_rsp = (uint64_t)&(s_task_1->ustack[4096]);
   s_task_2 = create_task();
-  s_task_2->rsp = (uint64_t)&(s_task_2->kstack[4096]);
+  s_task_2->kernel_rsp = (uint64_t)&(s_task_2->kstack[4096]);
+  s_task_2->user_rsp = (uint64_t)&(s_task_2->ustack[4096]);
 
   __asm__ __volatile__
   ( 
     "movq %0, %%rsp\n"
     :
-    :"r" (s_task_1->rsp)
+    :"r" (s_task_1->kernel_rsp)
   ); 
   
   __asm__ __volatile__
