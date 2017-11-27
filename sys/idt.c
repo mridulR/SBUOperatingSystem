@@ -3,6 +3,7 @@
 #include <sys/memset.h>
 #include <sys/types.h>
 #include <sys/asm_util.h>
+#include <sys/page_table.h>
 
 #define __NR_write_64 1
 
@@ -45,25 +46,16 @@ extern void pit_interrupt_service_routine();
 extern void keyboard_interrupt_service_routine();
 
 void general_permission_fault() {
-    kprintf("GENERAL PERMISSION FAULT !!!");
-    uint64_t ret = 0;
-    __asm__ __volatile__ 
-    (  "movq %%cr2, %0\n"
-       :"=r"(ret)
-       :
-    );
+    kprintf("\nGENERAL PERMISSION FAULT !!!");
+    uint64_t ret = readCR2();
+    kprintf("\nCR2 Value: %p", ret);
     while(1) {}
 }
 
 void general_page_fault() {
-    kprintf("GENERAL PAGE FAULT !!!");
-    uint64_t ret = 0;
-    __asm__ __volatile__ 
-    (  "movq %%cr2, %0\n"
-       :"=r"(ret)
-       :
-    );
-    kprintf("CR2 Value: %p", ret);
+    kprintf("\nGENERAL PAGE FAULT !!!");
+    uint64_t ret = readCR2();
+    kprintf("\nCR2 Value: %p", ret);
     while(1) {}
 }
 
