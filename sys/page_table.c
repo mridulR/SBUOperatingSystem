@@ -20,7 +20,7 @@ PML4* create_pml4_table(){
 
 PDPT* create_pdpt_table(PML4* pml4Table, uint16_t index ){
     PDPT* pdpt_table  = (PDPT *)allocate_phys_page();
-    uint64_t entry = (uint64_t)pdpt_table;    
+    uint64_t entry = (uint64_t)pdpt_table;
     //kprintf("PDPT Table: %p \n", (uint64_t)pdpt_table);
     entry |= (PTE_P | PTE_W | PTE_U);
     //entry |= (PTE_P | PTE_W );
@@ -34,7 +34,7 @@ PDPT* create_pdpt_table(PML4* pml4Table, uint16_t index ){
 PD* create_pd_table(PDPT* pdptTable, uint16_t index ){
     PD* pd_table  = (PD *)allocate_phys_page();
     //kprintf("PD Table: %p \n", (uint64_t)pd_table);
-    uint64_t entry = (uint64_t)pd_table;    
+    uint64_t entry = (uint64_t)pd_table;
     entry |= (PTE_P | PTE_W | PTE_U);
     //entry |= (PTE_P | PTE_W );
     //kprintf("PD entry with Offset: %p \n", (uint64_t)entry);
@@ -47,7 +47,7 @@ PD* create_pd_table(PDPT* pdptTable, uint16_t index ){
 PT* create_pt_table(PD* pdTable, uint16_t index ){
     PT* pt_table  = (PT *)allocate_phys_page();
     //kprintf("PT Table: %p \n", (uint64_t)pt_table);
-    uint64_t entry = (uint64_t)pt_table;    
+    uint64_t entry = (uint64_t)pt_table;
     entry |= (PTE_P | PTE_W | PTE_U);
     //entry |= (PTE_P | PTE_W );
     //kprintf("PT entry with Offset: %p \n", (uint64_t)entry);
@@ -99,14 +99,14 @@ void init_kernel_page_table(uint64_t kern_start, uint64_t kern_end, uint64_t
          kprintf("KERNEL PANIC: Can't allocate free page for PT table !!!");
          return;
     }
-    
+
     uint64_t vaddr = kern_vaddr_start;
     uint64_t phyaddr = kern_start;
     uint64_t vaddr_pt = KERN_BASE + (uint64_t)pt_table;
     kprintf("ROKU: Vaddr: %p ", (uint64_t)vaddr);
     for(;vaddr <= kern_vaddr_end; vaddr+= PAGE_SIZE, phyaddr+=PAGE_SIZE) {
-        uint16_t ptIndex = PT_ENTRY_INDEX(vaddr); 
-        uint64_t entry = (uint64_t)phyaddr;    
+        uint16_t ptIndex = PT_ENTRY_INDEX(vaddr);
+        uint64_t entry = (uint64_t)phyaddr;
         entry |= (PTE_P | PTE_W | PTE_U);
         //entry |= (PTE_P | PTE_W );
         //kprintf(" e= %p ",entry);
@@ -150,7 +150,7 @@ void map_free_pages(uint64_t phys_page_start, uint64_t phys_page_end) {
 }
 
 void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
-    
+
     uint16_t pml4Index = PML4_ENTRY_INDEX(vaddr);
     uint16_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
     uint16_t pdIndex = PD_ENTRY_INDEX(vaddr);
@@ -162,11 +162,11 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
          return;
     }
 
-    uint64_t pml4_entry = pml4_table->pml4_entries[pml4Index];                        
+    uint64_t pml4_entry = pml4_table->pml4_entries[pml4Index];
     //kprintf(" PML4 = %p  ", pml4_entry);
     PDPT* pdpt_table;
     if(pml4_entry & PTE_P) {
-        pdpt_table = (PDPT *)(PAGE_GET_PHYSICAL_ADDRESS(pml4_entry));                            
+        pdpt_table = (PDPT *)(PAGE_GET_PHYSICAL_ADDRESS(pml4_entry));
         //kprintf(" Pdpt Table = %p  ", (uint64_t)pdpt_table);
     }
     else{
@@ -176,11 +176,11 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
             return;
         }
     }
-    uint64_t pdpt_entry = pdpt_table->pdpt_entries[pdptIndex];                        
+    uint64_t pdpt_entry = pdpt_table->pdpt_entries[pdptIndex];
     //kprintf(" PDPT = %p  ", pdpt_entry);
     PD* pd_table;
     if(pdpt_entry & PTE_P) {
-        pd_table = (PD *)(PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry));                            
+        pd_table = (PD *)(PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry));
         //kprintf(" Pd Table = %p  ", (uint64_t)pd_table);
     }
     else{
@@ -190,11 +190,11 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
             return;
         }
     }
-    uint64_t pd_entry = pd_table->pd_entries[pdIndex];                        
+    uint64_t pd_entry = pd_table->pd_entries[pdIndex];
     //kprintf(" PD = %p  ", pd_entry);
     PT* pt_table;
     if(pd_entry & PTE_P) {
-        pt_table = (PT *)(PAGE_GET_PHYSICAL_ADDRESS(pd_entry));                            
+        pt_table = (PT *)(PAGE_GET_PHYSICAL_ADDRESS(pd_entry));
         //kprintf(" PT table = %p  ", (uint64_t)pt_table);
     }
     else{
@@ -205,12 +205,78 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
         }
     }
     uint64_t vaddr_pt = KERN_BASE + (uint64_t)pt_table;
-    uint64_t entry = (uint64_t)physaddr;    
+    uint64_t entry = (uint64_t)physaddr;
     entry |= (PTE_P | PTE_W | PTE_U);
     //entry |= (PTE_P | PTE_W );
     //kprintf(" Virtual PT table = %p  Entry = %p  ptIndex = %p", (uint64_t)vaddr_pt, (uint64_t)entry, ptIndex);
     ((PT*)vaddr_pt)->pt_entries[ptIndex] = (uint64_t)entry;
     //kprintf(" Vaddr: %p, Paddr= %p ", vaddr, physaddr);
+    return;
+}
+
+
+void page_fault_handler(uint64_t vaddr)
+{
+    uint16_t pml4Index = PML4_ENTRY_INDEX(vaddr);
+    uint16_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
+    uint16_t pdIndex = PD_ENTRY_INDEX(vaddr);
+    //uint16_t ptIndex = PT_ENTRY_INDEX(vaddr);
+
+    PML4* pml4_table = s_pml4_table;
+    if(!s_pml4_table) {
+         kprintf("KERNEL PANIC: PAGE FAULT HANDLER : PML4 table missing !!!");
+         return;
+    }
+
+    uint64_t pml4_entry = pml4_table->pml4_entries[pml4Index];
+    //kprintf(" PML4 = %p  ", pml4_entry);
+    PDPT* pdpt_table;
+    if(pml4_entry & PTE_P) {
+        pdpt_table = (PDPT *)(PAGE_GET_PHYSICAL_ADDRESS(pml4_entry));
+        //kprintf(" Pdpt Table = %p  ", (uint64_t)pdpt_table);
+    }
+    else{
+        pdpt_table = create_pdpt_table(pml4_table, pml4Index);
+        if(!pdpt_table) {
+            kprintf("KERNEL PANIC: PAGE FAULT HANDLER: Can't allocate free page for PDPT table !!!");
+            return;
+        }
+    }
+    uint64_t pdpt_entry = pdpt_table->pdpt_entries[pdptIndex];
+    //kprintf(" PDPT = %p  ", pdpt_entry);
+    PD* pd_table;
+    if(pdpt_entry & PTE_P) {
+        pd_table = (PD *)(PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry));
+        //kprintf(" Pd Table = %p  ", (uint64_t)pd_table);
+    }
+    else{
+        pd_table = create_pd_table(pdpt_table, pdptIndex);
+        if(!pd_table) {
+            kprintf("kernel panic:  PAGE FAULT HANDLER: can't allocate free page for pd table !!!");
+            return;
+        }
+    }
+    uint64_t pd_entry = pd_table->pd_entries[pdIndex];
+    //kprintf(" PD = %p  ", pd_entry);
+    PT* pt_table;
+    if(pd_entry & PTE_P) {
+        pt_table = (PT *)(PAGE_GET_PHYSICAL_ADDRESS(pd_entry));
+        //kprintf(" PT table = %p  ", (uint64_t)pt_table);
+    }
+    else{
+        pt_table = create_pt_table(pd_table, pdIndex);
+        if(!pt_table) {
+            kprintf("kernel panic: PAGE FAULT HANDLER: can't allocate free page for pd table !!!");
+            return;
+        }
+    }
+    /*uint64_t vaddr_pt = KERN_BASE + (uint64_t)pt_table;
+    uint64_t entry = (uint64_t)physaddr;
+    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W );
+    //kprintf(" Virtual PT table = %p  Entry = %p  ptIndex = %p", (uint64_t)vaddr_pt, (uint64_t)entry, ptIndex);
+    ((PT*)vaddr_pt)->pt_entries[ptIndex] = (uint64_t)entry;
+    //kprintf(" Vaddr: %p, Paddr= %p ", vaddr, physaddr);*/
     return;
 }
 
@@ -228,11 +294,31 @@ void set_cr3_register(PML4 *addr){
 }
 
 void* convert_virtual_to_phys(uint64_t vaddr) {
-   return (void *) ( vaddr & ~(KERN_BASE)); 
+   return (void *) ( vaddr & ~(KERN_BASE));
 }
 
 void* convert_phys_to_virtual(uint64_t physaddr) {
     return (void *)(KERN_BASE + physaddr);
 }
 
+
+uint64_t readErrorCode() {
+    uint64_t errorCode = 0;
+    __asm__ __volatile__
+    (  "movq %%rsp, %0\n"
+       : "=r"(errorCode)
+       :
+    );
+    return errorCode;
+}
+
+uint64_t readCR2() {
+    uint64_t addr = 0;
+    __asm__ __volatile__
+    (  "movq %%cr2, %0\n"
+       : "=r"(addr)
+       :
+    );
+    return addr;
+}
 

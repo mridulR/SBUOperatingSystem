@@ -55,7 +55,7 @@ void test_user_function()
 
     __asm__ __volatile__("int $0x80\n"); 
 
-    while(1) {}
+    //while(1) {}
     /*__asm__ __volatile__ 
     (
         "cli;\n" 

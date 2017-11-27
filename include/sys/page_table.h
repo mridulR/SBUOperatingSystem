@@ -79,4 +79,8 @@ void* convert_virtual_to_phys(uint64_t vaddr);
 
 void* convert_phys_to_virtual(uint64_t physaddr);
 
+uint64_t readCR2();
+
+uint64_t readErrorCode();
+
 #endif
