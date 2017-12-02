@@ -5,7 +5,8 @@
 #include <sys/kprintf.h>
 
 struct phys_page {
-    struct phys_page *next;
+    uint64_t nextIndex;
+    uint64_t cur_addr;
 } __attribute__((packed));
 
 typedef struct phys_page Phys_page;

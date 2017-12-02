@@ -14,11 +14,12 @@
 #define PHYS_PAGE_SIZE 4096
 #define PAGE_SIZE  0x1000
 
-Phys_page s_phys_page[PHYS_HIGH_PAGE_COUNT]= {NULL};
+Phys_page s_phys_page[PHYS_HIGH_PAGE_COUNT];
 
 uint64_t s_free_page_count;
 uint64_t s_max_page_count;
 uint64_t s_cur_page_index;
+uint64_t s_page_head_index;
 uint64_t s_phys_base_addr;
 uint64_t s_phys_limit_addr;
 uint64_t s_kern_start;
@@ -48,7 +49,8 @@ void init_phys_page(uint32_t *modulep, uint64_t kern_start, uint64_t kern_end) {
     }
   }
 
-  s_cur_page_index = 0;
+  s_cur_page_index  = 0;
+  s_page_head_index = 0;
   s_free_page_count = 0;
 
   uint64_t start = kern_end;
@@ -56,24 +58,23 @@ void init_phys_page(uint32_t *modulep, uint64_t kern_start, uint64_t kern_end) {
   uint64_t end = s_phys_limit_addr;
   kprintf("Start: %p End: %p", start, end);
   while(start < end) {
-      start = start + (uint64_t)PAGE_SIZE;
-      if(start >= kern_start && start <= kern_end) {
+      if(start >= kern_start && start < kern_end) {
         continue;
       }
-      s_phys_page[s_free_page_count++].next = (Phys_page *)start; 
-
+      s_phys_page[s_free_page_count].cur_addr  = start; 
+      start = start + (uint64_t)PAGE_SIZE;
+      s_phys_page[s_free_page_count].nextIndex = (uint64_t)(start - s_kern_end)/(uint64_t)PAGE_SIZE; 
+      s_free_page_count++;
       s_max_page_count = s_free_page_count;
   }
-  s_phys_page[s_free_page_count].next = NULL;
   
-  //test_physical_pages(kern_start, kern_end);
   //test_allocate_deallocate_page();
   init_kernel_page_table(kern_start, kern_end, s_phys_base_addr, s_phys_limit_addr);
   return; 
 }
 
 uint64_t get_phys_addr(uint64_t index) {
-    return (uint64_t)s_phys_base_addr + (uint64_t)(index * PAGE_SIZE);
+    return s_phys_page[index].cur_addr;
 }
 
 uint64_t get_first_free_page() {
@@ -81,32 +82,28 @@ uint64_t get_first_free_page() {
          kprintf("KERNEL PANIC: Out of Memory !!!");
          return 0;
     }
-    uint64_t cur_addr = (uint64_t)s_phys_base_addr + (uint64_t)((s_cur_page_index) * PAGE_SIZE);
-    uint64_t next_addr = (uint64_t)s_phys_page[s_cur_page_index].next;
-    s_cur_page_index = s_cur_page_index + (next_addr - cur_addr)/ PAGE_SIZE;
+    
+    uint64_t addr = s_phys_page[s_cur_page_index].cur_addr;
+    s_cur_page_index = s_phys_page[s_cur_page_index].nextIndex; 
     s_free_page_count--;
-    return cur_addr;
+    return addr;
 }
 
 uint64_t allocate_phys_page() {
     return get_first_free_page();
 }
 
-void deallocate_phys_page(uint64_t addr) {
 
-    if(addr <= s_phys_base_addr || addr >= s_phys_limit_addr || (addr >=
-       s_kern_start && addr <= s_kern_end)) {
-         kprintf("KERNEL PANIC: Physical Address out of range or kernel range !!!");
+void deallocate_phys_page(uint64_t addr) {
+    if(addr < s_phys_base_addr || addr >= s_phys_limit_addr || (addr >
+       s_kern_start && addr < s_kern_end)) {
+         kprintf("KERNEL PANIC: Physical Address out of range or kernel range !!! (%p) ",addr);
+         kprintf(" [%p - %p], [%p - %p] ", s_phys_base_addr, s_phys_limit_addr, s_kern_start, s_kern_end);
          return;
     }
-    uint64_t pageIndex = ((addr - s_phys_base_addr) / PAGE_SIZE);
-    if(pageIndex > s_max_page_count) {
-        kprintf("KERNEL PANIC: Physical address out of range !!!");
-        return;
-    }
-    uint64_t savePrevAddr = get_phys_addr(s_cur_page_index);    
-    s_cur_page_index = pageIndex;
-    s_phys_page[s_cur_page_index].next = (Phys_page *)savePrevAddr;
+    uint64_t addr_index =  (uint64_t)(addr - s_kern_end)/(uint64_t)PAGE_SIZE;
+    uint64_t save = s_cur_page_index;
+    s_cur_page_index =  addr_index;
+    s_phys_page[addr_index].nextIndex = save;
     return;
 }
-

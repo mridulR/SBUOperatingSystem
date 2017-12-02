@@ -31,59 +31,91 @@ extern uint64_t s_kern_start;
 extern uint64_t s_kern_end;
 extern char kernmem;
 
-void test_physical_pages(uint64_t kern_start, uint64_t kern_end) {
-  int count = 0;
-  bool error = false;
-  uint64_t addr;
-  while(count < s_max_page_count) {
-      if((uint64_t)s_phys_page[count].next >= (uint64_t)kern_start &&
-         (uint64_t)s_phys_page[count].next <= (uint64_t)kern_end) {
-        kprintf("TEST: Mapped a kernel page in Free list !!!!  %p \n",
-                (uint64_t)s_phys_page[count].next);
-        if(!error) {
-            addr = (uint64_t)s_phys_page[count].next;
-        }
-        error = true;
-      }
-      count++;
-  }
-  if(!error) {
-      kprintf("TEST: KERNEL RANGE [%p  %p] NOT IN FREE LIST \n",
-              (uint64_t)kern_start, (uint64_t)kern_end);
-  }
-  else{
-        kprintf("TEST: KERNEL PAGE mapped in Free list !!!! Start Address\
-                Overlap =  %p \n", addr);
-  }
-  kprintf("TEST: FREE LIST RANGE [%p  %p] \nPAGE_COUNT %d QEMU_PAGE_COUNT %d\n",
-          (uint64_t)s_phys_base_addr,
-          (uint64_t)s_phys_page[s_max_page_count-1].next, s_max_page_count,
-          (uint64_t)PHYS_HIGH_PAGE_COUNT);
+void test_physical_pages(uint64_t kern_start, uint64_t kern_end) { }
 
-  kprintf("TEST: ABOVE FREE LIST RANGE IS NULL [(%d):%p  (%d):%p (%d):%p] \n",
-          s_max_page_count, (uint64_t)s_phys_page[s_max_page_count].next,
-          s_max_page_count+1, (uint64_t)s_phys_page[s_max_page_count+1].next,
-          PHYS_HIGH_PAGE_COUNT-1,
-          (uint64_t)s_phys_page[PHYS_HIGH_PAGE_COUNT-1].next);
-
-  if((uint64_t)&kernmem != 0xFFFFFFFF80200000) {
-      kprintf("TEST FAIL: kernmem adress changed from 0xFFFFFFFF80200000 to %p\n", &kernmem);
-  }
-
-  return;
+uint64_t getIndex(uint64_t addr) {
+    return (uint64_t)(addr - s_kern_end)/(uint64_t) PAGE_SIZE;
 }
-
 
 void test_allocate_deallocate_page() {
     if(s_free_page_count == 0) {
          kprintf("KERNEL PANIC: Out of Memory !!!\n");
          return;
     }
-    uint64_t addr = allocate_phys_page();
-    kprintf("First  Page at: %p\n", addr);
-    addr = allocate_phys_page();
-    kprintf("Second Page at: %p\n", addr);
-    addr = allocate_phys_page();
-    kprintf("Third Page at: %p\n", addr);
+
+    for(int i = 0; i<10; ++i) {
+        kprintf(" [%d] - (%d, %p) ", i, s_phys_page[i].nextIndex, s_phys_page[i].cur_addr);
+    }
+
+    kprintf("\n +++  %d \n\n", s_cur_page_index);
+    uint64_t addr0 = allocate_phys_page();
+    kprintf("0: (%d, %p) ", getIndex(addr0), addr0);
+
+    uint64_t addr1 = allocate_phys_page();
+    kprintf("1: (%d, %p) ", getIndex(addr1), addr1);
+
+    uint64_t addr2 = allocate_phys_page();
+    kprintf("2: (%d, %p) ", getIndex(addr2), addr2);
+
+    uint64_t addr3 = allocate_phys_page();
+    kprintf("3: (%d, %p) ", getIndex(addr3), addr3);
+
+    uint64_t addr4 = allocate_phys_page();
+    kprintf("4: (%d, %p) ", getIndex(addr4), addr4);
+
+    uint64_t addr5 = allocate_phys_page();
+    kprintf("5: (%d, %p) ", getIndex(addr5), addr5);
+
+    uint64_t addr6 = allocate_phys_page();
+    kprintf("6: (%d, %p) ", getIndex(addr6), addr6);
+
+    kprintf("\n\n ---  %d \n", s_cur_page_index);
+    deallocate_phys_page(addr0);
+    deallocate_phys_page(addr1);
+    deallocate_phys_page(addr2);
+    deallocate_phys_page(addr3);
+    deallocate_phys_page(addr4);
+    deallocate_phys_page(addr5);
+    deallocate_phys_page(addr6);
+
+    for(int i = 0; i<10; ++i) {
+        kprintf(" [%d] - (%d, %p) ", i, s_phys_page[i].nextIndex, s_phys_page[i].cur_addr);
+    }
+
+    kprintf("\n +++  %d \n", s_cur_page_index);
+    addr0 = allocate_phys_page();
+    kprintf("0': (%d, %p) ", getIndex(addr0), addr0);
+
+    addr1 = allocate_phys_page();
+    kprintf("1': (%d, %p) ", getIndex(addr1), addr1);
+
+    addr2 = allocate_phys_page();
+    kprintf("2': (%d, %p) ", getIndex(addr2), addr2);
+
+    addr3 = allocate_phys_page();
+    kprintf("3': (%d, %p) ", getIndex(addr3), addr3);
+
+    addr4 = allocate_phys_page();
+    kprintf("4': (%d, %p) ", getIndex(addr4), addr4);
+
+    addr5 = allocate_phys_page();
+    kprintf("5': (%d, %p) ", getIndex(addr5), addr5);
+
+    addr6 = allocate_phys_page();
+    kprintf("6': (%d, %p) ", getIndex(addr6), addr6);
+
+    deallocate_phys_page(addr0);
+    deallocate_phys_page(addr1);
+    deallocate_phys_page(addr2);
+    deallocate_phys_page(addr3);
+    deallocate_phys_page(addr4);
+    deallocate_phys_page(addr5);
+    deallocate_phys_page(addr6);
+
+    kprintf("\n ---  %d \n", s_cur_page_index);
+    for(int i = 0; i<10; ++i) {
+        kprintf(" [%d] - (%d, %p) ", i, s_phys_page[i].nextIndex, s_phys_page[i].cur_addr);
+    }
+    kprintf("\n ---  %d \n", s_cur_page_index);
 }
 
