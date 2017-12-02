@@ -118,17 +118,14 @@ task_struct* create_task(uint64_t ppid) {
         s_process_queue[0].cur_task  = s_sbush_process;
         task->pid = s_cur_free_process_index;
         s_cur_free_process_index = s_process_queue[0].nextIndex;
-        //kprintf("FP Index = %d ", s_cur_free_process_index); 
         s_run_queue_head = s_sbush_process;
         --s_free_process_count;
     }
     else {
-        //kprintf("*FP Index = %d ", s_cur_free_process_index); 
         s_process_queue[s_cur_free_process_index].cur_task = task;
         task->pid = s_cur_free_process_index;
         task->ppid = ppid;
         s_cur_free_process_index = s_process_queue[s_cur_free_process_index].nextIndex;
-        //kprintf("$FP Index = %d ", s_cur_free_process_index); 
         --s_free_process_count;
     }
     task->kernel_rsp = 0;
@@ -164,7 +161,7 @@ void freeTask(task_struct *task) {
 
 void kill_task(uint64_t pid) {
     if(pid <= 0 || pid > s_max_process_count || s_process_queue[pid].cur_task == NULL) {
-        kprintf("KERNEL PANIC: Invalid Process id !!!");
+        kprintf("KERNEL PANIC: Invalid Process id !!! (%d) ", pid);
         return ;
     }
     task_struct* pcb;
@@ -193,7 +190,7 @@ void test_user_function()
 
     __asm__ __volatile__("int $0x80\n"); 
 
-    //while(1) {}
+    while(1) {}
     /*__asm__ __volatile__ 
     (
         "cli;\n" 
@@ -208,9 +205,9 @@ void test_user_function()
     __asm__ __volatile__ ("iretq\n");*/
 }
 
-/*void switch_to_ring3() {
+void switch_to_ring3() {
 
-    set_tss_rsp((uint64_t *)s_task_1->kernel_rsp);
+    set_tss_rsp((uint64_t *)s_init_process->kernel_rsp);
 
     __asm__ __volatile__
     (  "pushq $0x23\n"
@@ -218,7 +215,7 @@ void test_user_function()
        "pushfq\n"
        "pushq $0x2b\n"
        :
-       :"r" (s_task_2->user_rsp)
+       :"r" (s_sbush_process->user_rsp)
     );
     
     __asm__ __volatile__ 
@@ -229,7 +226,7 @@ void test_user_function()
     );
 }
 
-void function_2(int d) {
+/*void function_2(int d) {
     int a = 20;
     kprintf("\nIn Process 2");
     switch_to(s_task_2, s_task_1);
@@ -259,7 +256,35 @@ void schedule() {
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
     s_sbush_process = create_task(0);
-    //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
+    kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
+    switch_to_ring3();
+    test_user_function();
+    return;
+}
+
+void init_start() {
+
+    kprintf("\nInit Process Launched");
+    init_process_queue();
+    LaunchSbush();
+    while(1) {
+        schedule();
+    }
+
+    /*first_switch_to(s_task_1, s_task_2);
+    kprintf("\nIn Process 1.1");
+    switch_to(s_task_1, s_task_2);
+    kprintf("\nResuming Process 1.2");
+    switch_to(s_task_1, s_task_2);
+    kprintf("\nResuming Process 1.3");
+    switch_to(s_task_1, s_task_2);
+    kprintf("\nResuming Process 1.4");*/
+    while(1) { }
+    return;
+}
+
+
+void test_process_queue() {
     task_struct *task;
     task = create_task(0);
     //kprintf("\n Task%d, (P:%d, PP:%d) %p", 1, task->pid, task->ppid, task);
@@ -274,7 +299,7 @@ void LaunchSbush(){
     task = create_task(0);
     //kprintf("\n Task%d, (P:%d, PP:%d) %p", 6, task->pid, task->ppid, task);
     kprintf("\n Task%d, (P:%d, PP:%d) %p", 7, task->pid, task->ppid, task);
-    for(int i = 0; i<8; ++i) {
+    for(int i = 0; i<10; ++i) {
         if(s_process_queue[i].cur_task == NULL) {
             kprintf("\nRk PQ[%d], (NI: %d) %p", i,
                     s_process_queue[i].nextIndex, s_process_queue[i].cur_task);
@@ -320,7 +345,7 @@ void LaunchSbush(){
     kill_task(6);
  
     kprintf("\n Task%d, (P:%d, PP:%d) %p", 7, task->pid, task->ppid, task);
-    for(int i = 0; i<8; ++i) {
+    for(int i = 0; i<10; ++i) {
         if(s_process_queue[i].cur_task == NULL) {
             kprintf("\n PQ[%d], (NI: %d) %p", i,
                     s_process_queue[i].nextIndex, s_process_queue[i].cur_task);
@@ -331,27 +356,4 @@ void LaunchSbush(){
                     s_process_queue[i].cur_task->ppid, s_process_queue[i].cur_task);
         }
     }
-    return;
 }
-
-void init_start() {
-
-    kprintf("\nInit Process Launched");
-    init_process_queue();
-    LaunchSbush();
-    while(1) {
-        schedule();
-    }
-
-    /*first_switch_to(s_task_1, s_task_2);
-    kprintf("\nIn Process 1.1");
-    switch_to(s_task_1, s_task_2);
-    kprintf("\nResuming Process 1.2");
-    switch_to(s_task_1, s_task_2);
-    kprintf("\nResuming Process 1.3");
-    switch_to(s_task_1, s_task_2);
-    kprintf("\nResuming Process 1.4");*/
-    while(1) { }
-    return;
-}
-

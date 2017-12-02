@@ -83,4 +83,6 @@ uint64_t readCR2();
 
 uint64_t readErrorCode();
 
+void page_fault_handler(uint64_t vaddr);
+
 #endif
