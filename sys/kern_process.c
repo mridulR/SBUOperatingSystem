@@ -3,6 +3,9 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 #include <sys/memcpy.h>
+#include <sys/vfs.h>
+#include <sys/kstring.h>
+#include <sys/tarfs.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -86,13 +89,29 @@ void switch_to(task_struct *cur, task_struct *next) {
 }
 
 void function_2() {
+
+	kprintf("\nTesting tarfs \n");
+	v_file_node * root_node = init_tarfs();
+	print_node_inorder(root_node);
+
+	kprintf("\n Lookup sbush file \n");
+	v_file_node * result = search_file("rootfs/bin/sbush", root_node->v_child[0]);
+	
+	if (result != NULL) {
+		kprintf("Sbush found - %s, start addr = %p, end_addr = %p\n", 
+			result->v_name, result->start_addr, result->end_addr);
+	} else {
+		kprintf("Sbush not found !!!!\n");
+	}
+    
     kprintf("\nIn Process 2");
     switch_to(s_task_2, s_task_1);
     kprintf("\nResuming Process 2.1");
     switch_to(s_task_2, s_task_1);
     kprintf("\nResuming Process 2.2");
     switch_to(s_task_2, s_task_1);
-    kprintf("\nResuming Process 2.3");
+    kprintf("\nResuming Process 2.3\n");
+
     while(1) { }
     return;
 }

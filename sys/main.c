@@ -11,6 +11,7 @@
 #include <sys/ps2Controller.h>
 #include <sys/phys_pages.h> 
 #include <sys/kern_process.h>
+#include <sys/vfs.h>
 
 #define true 1
 #define INITIAL_STACK_SIZE 4096
@@ -82,6 +83,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     : 
     :"r" (&function_1)
   );
+
 
   while(1) { }
 
