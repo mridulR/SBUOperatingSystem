@@ -28,10 +28,9 @@ char *KEYPRESS_BANNER = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 0));
 char *CTRL_KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 21));
 char *KEYPRESS_ADDRESS = (char *)(VIDEO_BUFFER_BASE_ADDR + ((160 * 24) + 23));
 
-extern void function_1();
-extern void function_2();
-extern task_struct* s_task_1;
-extern task_struct* s_task_2;
+extern void init_start();
+
+extern task_struct* s_init_process;
 
 void setUpWelcomeScreen() {
   char *trav = TIME_ADDRESS - 16;
@@ -56,7 +55,6 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("Phybase %p  physfree %p kernmem %p\n", (uint64_t) physbase, (uint64_t)physfree, &kernmem);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
    
-
   // Initialize IDT and load the Idtr
   init_Idt();
 
@@ -78,26 +76,24 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   setUpWelcomeScreen();
   /*init_pci_devInfo();
   init_ahci();*/
-
-  s_task_1 = create_task();
-  s_task_1->kernel_rsp = (uint64_t)&(s_task_1->kstack[4096]);
-  s_task_1->user_rsp = (uint64_t)&(s_task_1->ustack[4096]);
-  s_task_2 = create_task();
-  s_task_2->kernel_rsp = (uint64_t)&(s_task_2->kstack[4096]);
-  s_task_2->user_rsp = (uint64_t)&(s_task_2->ustack[4096]);
+  
+  // Create Init process
+  s_init_process = create_task(0);
+  s_init_process->kernel_rsp = (uint64_t)&(s_init_process->kstack[4096]);
+  s_init_process->user_rsp =   (uint64_t)&(s_init_process->ustack[4096]);
 
   __asm__ __volatile__
   ( 
     "movq %0, %%rsp\n"
     :
-    :"r" (s_task_1->kernel_rsp)
+    :"r" (s_init_process->kernel_rsp)
   ); 
   
   __asm__ __volatile__
   ( "pushq %0\n"
     "ret\n"
     : 
-    :"r" (&function_1)
+    :"r" (&init_start)
   );
 
   while(1) { }
