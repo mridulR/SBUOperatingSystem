@@ -48,6 +48,14 @@ extern void keyboard_interrupt_service_routine();
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
     uint64_t ret = readCR2();
+    uint64_t error = 0;
+    kprintf("\nCR2 Value: %p", ret);
+    __asm__ __volatile__ 
+    ( "movq %%rsp, %0\n"
+      :"=r"(error)
+      :
+    );
+    kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
     kprintf("\nCR2 Value: %p", ret);
     while(1) {}
 }
@@ -55,7 +63,15 @@ void general_permission_fault() {
 void general_page_fault() {
     kprintf("\nGENERAL PAGE FAULT !!!");
     uint64_t ret = readCR2();
+    uint64_t error = 0;
+    __asm__ __volatile__ 
+    ( "movq %%rsp, %0\n"
+      :"=r"(error)
+      :
+    );
+    kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
     kprintf("\nCR2 Value: %p", ret);
+    page_fault_handler(ret);
     while(1) {}
 }
 
