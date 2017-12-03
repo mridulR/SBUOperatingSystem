@@ -34,6 +34,7 @@ struct file_descriptor {
 
 
 v_file_node* root_node;
+v_file_node* tarfs_mount_node;
 
 v_file_node* get_root_node();
 v_file_node* search_file(char* dir_path, v_file_node * start_node);

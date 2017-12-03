@@ -4,6 +4,7 @@
 #include <sys/memset.h>
 #include <sys/memcpy.h>
 #include <sys/vfs.h>
+#include <sys/elf64.h>
 #include <sys/kstring.h>
 #include <sys/tarfs.h>
 #include <sys/gdt.h>
@@ -255,8 +256,14 @@ void schedule() {
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
-    s_sbush_process = create_task(0);
-    kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
+
+    s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
+    if (s_sbush_process == NULL) {
+        kprintf("\nSBUSH launch not implemented.....\n");
+    }
+
+
+    //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     //switch_to_ring3();
     //test_user_function();
     return;
@@ -266,23 +273,8 @@ void init_start() {
 
     kprintf("\nInit Process Launched");
     init_process_queue();
-
-    // -------------------------------------
-    kprintf("\nTesting tarfs \n");
-    v_file_node * root_node = init_tarfs();
+    init_tarfs();
     print_node_inorder(root_node);
-
-    kprintf("\n Lookup sbush file \n");
-    v_file_node * result = search_file("rootfs/bin/sbush", root_node->v_child[0]);
-
-    if (result != NULL) {
-        kprintf("Sbush found - %s, start addr = %p, end_addr = %p\n", 
-            result->v_name, result->start_addr, result->end_addr);
-    } else {
-        kprintf("Sbush not found !!!!\n");
-    }
-    
-    // -----------------------------------
 
     LaunchSbush();
     while(1) {

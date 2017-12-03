@@ -48,6 +48,71 @@ v_file_node * build_Node(char * name, v_file_node * parent, int8_t is_dir, uint6
 	return curr;
 }
 
+
+v_file_node * insert_node_by_name2(char *name, bool is_dir, uint64_t start_addr, uint64_t end_addr, v_file_node * node) {
+
+    if (node == NULL || name == NULL || (*name == '\0')) {
+        return NULL;
+    }
+
+    char *path = (char *) kmalloc(sizeof(char) * kstrlen(name));
+    memset((uint8_t *)path, '\0', PAGE_SIZE);
+    memcpy(path, name, kstrlen(name));
+
+    char *remaining = path;
+    char *temp = kstr_tok(path, '/', &remaining);
+
+    if (kstrcmp(temp, node->v_name) == 0) {
+        if (remaining == NULL || *remaining == '\0') {
+            return node;
+        }
+
+        v_file_node * child = NULL;
+        for (int i = 0; i < node->no_of_child; i++) {
+            if (kstrcmp(remaining, node->v_child[i]->v_name) == 0) {
+                child = node->v_child[i];
+                break;
+            }
+        }
+        if (child != NULL) {
+            return insert_node_by_name2(remaining, is_dir, start_addr, end_addr, child);
+        } else {
+            v_file_node * curr_node = build_Node(remaining, node, is_dir, start_addr, end_addr);
+            node->v_child[node->no_of_child] = curr_node;
+            node->no_of_child += 1;
+            temp = kstr_tok(remaining, '/', &remaining);
+            return insert_node_by_name2(temp, is_dir, start_addr, end_addr, curr_node);
+        }
+    } else {
+
+            v_file_node * child = NULL;
+            for (int i = 0; i < node->no_of_child; i++) {
+                if (kstrcmp(temp, node->v_child[i]->v_name) == 0) {
+                    child = node->v_child[i];
+                    break;
+                }
+            }
+            if (child != NULL) {
+              return insert_node_by_name2(remaining, is_dir, start_addr, end_addr, child);
+            } else {
+
+                v_file_node * curr_node = NULL;
+                if (remaining == NULL || *remaining == '\0') {
+                    curr_node = build_Node(temp, node, is_dir, start_addr, end_addr);
+                } else {
+                    curr_node = build_Node(temp, node, is_dir, start_addr, end_addr);
+                }
+                node->v_child[node->no_of_child] = curr_node;
+                node->no_of_child += 1;
+                temp = kstr_tok(remaining, '/', &remaining);
+                return insert_node_by_name2(temp, is_dir, start_addr, end_addr, curr_node);
+            }
+    }
+    kfree(path);
+    return NULL;
+}
+
+
 void insert_node_by_name(char *name, bool is_dir, uint64_t start_addr, uint64_t end_addr) {
 	char *path = (char *) kmalloc(sizeof(char) * kstrlen(name));
     memset((uint8_t *)path, '\0', PAGE_SIZE);	
@@ -59,22 +124,31 @@ void insert_node_by_name(char *name, bool is_dir, uint64_t start_addr, uint64_t 
 	int done = 0;
     while ((done == 0) && (temp != NULL) && (*temp != '\0')) {
 		int flag_child_of_directory = 0;
-		v_file_node * trav_node = root_node->v_child[0];
+		v_file_node * trav_node = tarfs_mount_node;
 		for (int index = 0; index < trav_node->no_of_child; index++) {
 			if (kstrcmp(temp, trav_node->v_child[index]->v_name) == 0) {
 				flag_child_of_directory = 1;
+                temp = kstr_tok(remaining, '/', &remaining);
+                trav_node = trav_node->v_child[index];
+                if (temp == NULL || (*temp == '\0')) {
+                    done = 1;
+                }
 				break;
 			}
 			trav_node = (v_file_node *)trav_node->v_child[index];
 		}
+
+        if (done == 0) {    
 		if(flag_child_of_directory == 0) {
-			while ((temp != NULL) &&  (*temp != '\0')) {
-				v_file_node * curr_node = build_Node(temp, trav_node, 1, 0, 0);
-                trav_node->v_child[trav_node->no_of_child] = curr_node;
-                trav_node->no_of_child = trav_node->no_of_child + 1;
-                trav_node = curr_node; 
-                temp = kstr_tok(remaining, '/', &remaining);
-            }
+            trav_node = tarfs_mount_node;
+        }
+		while ((temp != NULL) &&  (*temp != '\0')) {
+			v_file_node * curr_node = build_Node(temp, trav_node, 1, 0, 0);
+            trav_node->v_child[trav_node->no_of_child] = curr_node;
+            trav_node->no_of_child = trav_node->no_of_child + 1;
+            trav_node = curr_node; 
+            temp = kstr_tok(remaining, '/', &remaining);
+        }
 		trav_node->start_addr = start_addr;
 		trav_node->end_addr = end_addr;
         trav_node->is_dir = is_dir;
@@ -87,42 +161,23 @@ void insert_node_by_name(char *name, bool is_dir, uint64_t start_addr, uint64_t 
 
 
 int32_t atoi(char *ch) {
-	int num = 0;
-	int sign = 1;
-   
-    if (*ch == '-') {
-		sign = -1;
+    int32_t num = 0;
+    while (*ch != '\0') {
+        num = num * 10 + (*ch - '0');
+        ch++;
     }
-	ch++;
-    
-	while(*ch) {
-		if ((int)*ch >= 48 && (int)*ch <= 57) {
-			num = (num << 3) + (num << 1) + (*ch) - '0';
-			ch++;
-		} else {
-			return 0;
-		}
-    }
-
-	return sign * num;
-
+    return num;
 }
 
-int32_t pow(int base, int power) {
-	int i =0, product = 1;
-	for (i = 0; i < power; ++i) {
-		product = product * base;
-	}
-	return product;
-}
 
-int32_t oct_to_dec(int num) {
-	int decimal = 0, index = 0, remainder;
+
+int32_t oct_to_dec(int32_t num) {
+	int decimal = 0;
+    int base = 1;
 	while (num != 0) {
-		remainder = num % 10;
-		num /= 10;
-		decimal += remainder + pow(8, index);
-		++index;
+		decimal +=  (num % 10) * base;
+		base = base * 8;
+        num = num / 10;
 	}
 	return decimal;
 }
@@ -130,29 +185,38 @@ int32_t oct_to_dec(int num) {
 
 void* init_tarfs() {
     root_node = build_Node("/", NULL, true, 0, 0);
-	v_file_node * mount_node = build_Node("rootfs", root_node, true, 0, 0);
+	tarfs_mount_node = build_Node("rootfs", root_node, true, 0, 0);
     root_node->no_of_child += 1;
-	root_node->v_child[0] = mount_node;
+	root_node->v_child[0] = tarfs_mount_node;
 
 	posix_header_ustar* start = (posix_header_ustar*) & _binary_tarfs_start;
 
-
 	int file_size = 0;
 	while(start < (posix_header_ustar*) & _binary_tarfs_end) {
-		file_size = oct_to_dec(atoi(start->size));
 
-		if (kstrcmp(start->typeflag, "5") == 0) {
-			insert_node_by_name(start->name, true, 0, 0);
-		} else {
-			insert_node_by_name(start->name, false, (uint64_t) (start + 1),
-				 (uint64_t) ((void *)start + 512 + file_size));
+        if (start->name == NULL || kstrlen(start->name) < 3) {
+            start = start + 1;
+            continue;
         }
 
+		file_size = oct_to_dec(atoi(start->size));
+        //if(kstrcmp(start->name, "-\n") != 0){
+        //    kprintf("\nFile Name - %s,  %d\n", start->name, file_size);
+        // }
+		if (kstrcmp(start->typeflag, "5") == 0) {
+			insert_node_by_name2(start->name, true, 0, 0, tarfs_mount_node);
+		} else {
+			insert_node_by_name2(start->name, false, (uint64_t) (start + 1),
+				 (uint64_t) ((void *)start + 512 + file_size), tarfs_mount_node);
+        }
+        
 		if (file_size > 0) {
-			kprintf("Listing Non-zero File Name - %s\n", start->name);
-			start = start + (file_size / (sizeof(start) + 1)) + 2;
+            uint64_t offset = (file_size / sizeof(posix_header_ustar));
+            if(file_size % sizeof(start) == 0) {
+                offset += 1;
+            }
+			start = start + offset + 1; // * sizeof(posix_header_ustar))+ 2;
         } else {
-			kprintf("Listing zero size File Name - %s\n", start->name);
 			start = start + 1;
         }
     } 	
