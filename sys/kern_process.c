@@ -257,8 +257,8 @@ void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
     s_sbush_process = create_task(0);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
-    switch_to_ring3();
-    test_user_function();
+    //switch_to_ring3();
+    //test_user_function();
     return;
 }
 
