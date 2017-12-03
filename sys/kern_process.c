@@ -266,6 +266,24 @@ void init_start() {
 
     kprintf("\nInit Process Launched");
     init_process_queue();
+
+    // -------------------------------------
+    kprintf("\nTesting tarfs \n");
+    v_file_node * root_node = init_tarfs();
+    print_node_inorder(root_node);
+
+    kprintf("\n Lookup sbush file \n");
+    v_file_node * result = search_file("rootfs/bin/sbush", root_node->v_child[0]);
+
+    if (result != NULL) {
+        kprintf("Sbush found - %s, start addr = %p, end_addr = %p\n", 
+            result->v_name, result->start_addr, result->end_addr);
+    } else {
+        kprintf("Sbush not found !!!!\n");
+    }
+    
+    // -----------------------------------
+
     LaunchSbush();
     while(1) {
         schedule();
