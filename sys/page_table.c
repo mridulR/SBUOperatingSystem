@@ -14,7 +14,7 @@ PML4 * s_pml4_table;
 uint64_t cr3;
 
 PML4* create_pml4_table(){
-    s_pml4_table  = (PML4 *)allocate_phys_page();
+    s_pml4_table  = (PML4*)allocate_phys_page();
     return s_pml4_table;
 }
 
@@ -217,12 +217,12 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr) {
 
 void page_fault_handler(uint64_t vaddr)
 {
-    uint16_t pml4Index = PML4_ENTRY_INDEX(vaddr);
-    /*uint16_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
+    /*uint16_t pml4Index = PML4_ENTRY_INDEX(vaddr);
+    uint16_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
     uint16_t pdIndex = PD_ENTRY_INDEX(vaddr);
-    uint16_t ptIndex = PT_ENTRY_INDEX(vaddr);*/
+    uint16_t ptIndex = PT_ENTRY_INDEX(vaddr);
 
-    PML4* pml4_table = s_pml4_table;
+    PML4* pml4_table = KERN_BASE + s_pml4_table;
 
     if(!s_pml4_table) {
          kprintf("KERNEL PANIC: PAGE FAULT HANDLER : PML4 table missing !!!");
@@ -231,7 +231,7 @@ void page_fault_handler(uint64_t vaddr)
 
     uint64_t pml4_entry = pml4_table->pml4_entries[pml4Index];
     kprintf(" PML4 = %p  ", pml4_entry);
-    /*PDPT* pdpt_table;
+    PDPT* pdpt_table;
     if(pml4_entry & PTE_P) {
         pdpt_table = (PDPT *)(PAGE_GET_PHYSICAL_ADDRESS(pml4_entry));
         kprintf(" Pdpt Table = %p  ", (uint64_t)pdpt_table);
