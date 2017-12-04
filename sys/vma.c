@@ -8,7 +8,7 @@
 #define PAGE_SIZE  4096
 
 extern task_struct* s_cur_run_task;
-
+extern uint64_t KB;
 
 void print_vma() {
     vma * root = s_cur_run_task->vma_root;
@@ -45,7 +45,8 @@ vma * find_vma(uint64_t start_addr) {
 }
 
 vma * build_vma_node(uint64_t heap_top, uint64_t size_of_memory_allocated) {
-    vma * curr = (vma *)kmalloc(sizeof(vma));
+    uint64_t addr = KB + kmalloc(sizeof(vma));
+    vma * curr = (vma *)addr;
     memset((uint8_t *)curr, '\0', PAGE_SIZE);
     curr->start_addr = heap_top;
     curr->end_addr = heap_top + size_of_memory_allocated;
@@ -89,7 +90,7 @@ bool delete_vma(uint64_t start_addr) {
             next->prev = NULL;
         }
         s_cur_run_task->vma_root = next;
-        kfree(vma_entry);
+        kfree((uint64_t)vma_entry);
         return true;
     }
 
@@ -100,6 +101,6 @@ bool delete_vma(uint64_t start_addr) {
     if (vma_entry->next != NULL) {
         vma_entry->next->prev = trav;
     }
-    kfree(vma_entry);
+    kfree((uint64_t)vma_entry);
     return true;
 }

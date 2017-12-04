@@ -3,8 +3,8 @@
 
 #include <sys/types.h>
 
-void * kmalloc(uint64_t vaddr);
+uint64_t kmalloc(uint64_t vaddr);
 
-void kfree(void* vaddr);
+void kfree(uint64_t vaddr);
 
 #endif

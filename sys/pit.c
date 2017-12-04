@@ -29,7 +29,7 @@ uint32_t get_pit_count() {
 
 void helper_calculate_timer() {
   ++g_pit_count; 
-  if(g_pit_count % 35 == 0) {
+  if(g_pit_count % 4 == 0) {
     ++time_in_sec;
     printTime(time_in_sec/100);
   }
@@ -41,7 +41,7 @@ void init_pit() {
   set_ir_in_idt(32, pit_interrupt_service_routine);
   //load_idt();
 
-  uint16_t base_frequency = 4000;
+  uint16_t base_frequency = 40000;
   uint64_t max_frequency = 1193181;
  
   // Calculate the pit frequency

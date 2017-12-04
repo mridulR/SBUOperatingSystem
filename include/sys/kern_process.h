@@ -21,11 +21,13 @@ struct task_struct {
     uint32_t ppid;
     uint64_t kernel_rsp;
     uint64_t user_rsp;
-    uint8_t* kstack;
-    uint8_t* ustack;
+    uint64_t kstack;
+    uint64_t ustack;
     uint32_t exit_status;
     Mode mode;
     uint64_t rip;
+    uint64_t pml4; 
+    uint8_t* pml4_ptr;
     State state;
     // Used for run_queue
     struct task_struct *next;

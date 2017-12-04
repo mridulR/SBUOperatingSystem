@@ -8,6 +8,7 @@
 
 #define PAGE_SIZE 4096
 
+extern uint64_t KB;
 
 v_file_node* get_root_node() {
 	return root_node; 
@@ -36,7 +37,8 @@ void print_node_inorder(v_file_node* root) {
 }
 
 v_file_node * build_Node(char * name, v_file_node * parent, int8_t is_dir, uint64_t start, uint64_t end) {
-	v_file_node * curr = (v_file_node *)kmalloc(sizeof(v_file_node));
+    uint64_t addr = KB + kmalloc(sizeof(v_file_node));
+	v_file_node * curr = (v_file_node *)addr;
     memset((uint8_t *)curr, '\0', PAGE_SIZE);	
 	memcpy(curr->v_name, name, kstrlen(name));
 	curr->parent = parent;
@@ -55,7 +57,8 @@ v_file_node * insert_node_by_name2(char *name, bool is_dir, uint64_t start_addr,
         return NULL;
     }
 
-    char *path = (char *) kmalloc(sizeof(char) * kstrlen(name));
+    uint64_t addr = KB + kmalloc(sizeof(char) * kstrlen(name));
+    char *path = (char *) addr;
     memset((uint8_t *)path, '\0', PAGE_SIZE);
     memcpy(path, name, kstrlen(name));
 
@@ -108,13 +111,14 @@ v_file_node * insert_node_by_name2(char *name, bool is_dir, uint64_t start_addr,
                 return insert_node_by_name2(temp, is_dir, start_addr, end_addr, curr_node);
             }
     }
-    kfree(path);
+    kfree((uint64_t)path);
     return NULL;
 }
 
 
 void insert_node_by_name(char *name, bool is_dir, uint64_t start_addr, uint64_t end_addr) {
-	char *path = (char *) kmalloc(sizeof(char) * kstrlen(name));
+    uint64_t addr = KB + kmalloc(sizeof(char) * kstrlen(name));
+	char *path = (char *) addr;
     memset((uint8_t *)path, '\0', PAGE_SIZE);	
 	memcpy(path, name, kstrlen(name));
 
@@ -156,7 +160,7 @@ void insert_node_by_name(char *name, bool is_dir, uint64_t start_addr, uint64_t 
     }
 	temp = kstr_tok(remaining, '/', &remaining);
 	}
-	kfree(path);
+	kfree((uint64_t)path);
 }
 
 
@@ -233,8 +237,8 @@ v_file_node* search_file(char* dir_path, v_file_node * start_node) {
 		return NULL;
 	}
 
-
-	char *path = (char *) kmalloc(sizeof(char) * kstrlen(dir_path));
+    uint64_t addr = KB + kmalloc(sizeof(char) * kstrlen(dir_path));
+	char *path = (char *) addr;
     memset((uint8_t *)path, '\0', PAGE_SIZE);   
     memcpy(path, dir_path, kstrlen(dir_path));
 
@@ -242,7 +246,7 @@ v_file_node* search_file(char* dir_path, v_file_node * start_node) {
     char *temp = kstr_tok(path, '/', &remaining);
 
 	if (kstrcmp(temp, start_node->v_name) != 0) {
-		kfree(path);
+		kfree((uint64_t)path);
         return NULL;
     } else {
 		if (remaining == NULL || *remaining == '\0') {
@@ -251,7 +255,7 @@ v_file_node* search_file(char* dir_path, v_file_node * start_node) {
 	}
 
 	if (remaining == NULL || *remaining == '\0') {
-		kfree(path);
+		kfree((uint64_t)path);
 		return NULL;
 	}
 
@@ -275,7 +279,7 @@ v_file_node* search_file(char* dir_path, v_file_node * start_node) {
 			return NULL;
         }
 	}
-	kfree(path);
+	kfree((uint64_t)path);
 	return NULL;
 }
 
