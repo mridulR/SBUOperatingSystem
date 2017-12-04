@@ -11,6 +11,7 @@
 
 #define PAGE_SIZE 0x1000
 
+extern uint64_t KB;
 
 Process_queue s_process_queue[2048];
 
@@ -106,8 +107,8 @@ task_struct* create_task(uint64_t ppid) {
         kprintf("KERNEL PANIC: Invalid Parent process Id !!!");
         return NULL;
     }
-
-    task_struct *task = (task_struct *)kmalloc(PAGE_SIZE);
+    uint64_t addr = KB + kmalloc(PAGE_SIZE);
+    task_struct *task = (task_struct *)addr;
     memset(task, 0, PAGE_SIZE);
     if(!task) {
         kprintf("KERNEL PANIC: CREATE TASK(): Can't allocate free page for task_struct !!!");
@@ -132,17 +133,16 @@ task_struct* create_task(uint64_t ppid) {
     task->kernel_rsp = 0;
     task->user_rsp = 0;
     task->kstack = kmalloc(PAGE_SIZE);
-    memset(task->kstack, 0, PAGE_SIZE);
+    memset((uint64_t *)(KB + task->kstack), 0, PAGE_SIZE);
     task->ustack = kmalloc(PAGE_SIZE);
-    memset(task->ustack, 0, PAGE_SIZE);
+    memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
     task->exit_status = 0;
     task->state = RUNNING;
     task->mode = KERNEL;
     task->rip = 0;
-    task->pml4 = allocate_phys_page();
-    //task->pml4 = (uint8_t *)allocate_phys_page();
+    task->pml4 = kmalloc(PAGE_SIZE);
     kprintf(" USER PML4: %p ", task->pml4);
-    //memcpy((uint8_t *)(0xFFFFFFFF80000000 + task->pml4), (0xFFFFFFFF80000000 + s_pml4_table), PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->pml4), (uint64_t *)(KB + s_pml4_table), PAGE_SIZE);
     task->next = NULL;
     task->prev = NULL;
     memset(&(task->name),'\0', 256);
@@ -160,7 +160,7 @@ task_struct* create_task(uint64_t ppid) {
 void freeTask(task_struct *task) {
     kfree(task->kstack);
     kfree(task->ustack);
-    kfree(task);
+    kfree((uint64_t)task);
     return;
 }
 
@@ -260,14 +260,16 @@ void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
     s_sbush_process = create_task(0);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
-   // __asm__ __volatile__("cli\n");
+    // __asm__ __volatile__("cli\n");
     //set_cr3_register((PML4 *)s_init_process->pml4);
     //__asm__ __volatile__("sti\n");
-    //uint64_t *ptr = (uint64_t *)0x300000;
+    //uint64_t addr = 0x0000000000300000;
+    //uint64_t *ptr = (uint64_t *)addr;
     //*ptr = 99; 
-    //kprintf(" %d " , *ptr); 
+    //kprintf(" BINGO %d !!!" , *ptr); 
     //switch_to_ring3();
     //test_user_function();
+    while(1) {}
     return;
 }
 

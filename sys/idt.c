@@ -44,8 +44,8 @@ void disable_Interrupts() {
 }
 
 extern void pit_interrupt_service_routine();
-
 extern void keyboard_interrupt_service_routine();
+extern void helper_general_permission_fault_handler();
 
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
@@ -68,13 +68,19 @@ void general_page_fault() {
     uint64_t error = 0;
     __asm__ __volatile__ 
     ( "movq %%rsp, %0\n"
+      "cli\n"
       :"=r"(error)
       :
     );
     kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
     kprintf("\nCR2 Value: %p", ret);
-    //page_fault_handler(ret);
-    while(1) {}
+    page_fault_handler(ret);
+    //flush_tlb_entry(ret);
+    __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
+    __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
+    __asm__ __volatile__ ("sti\n" : : );
+ 
+    //while(1) {}
 }
 
 void helper_interrupt_service_routine() {
@@ -84,6 +90,8 @@ void helper_interrupt_service_routine() {
 }
 
 void default_interrupt_service_routine();
+
+void helper_page_fault_handler();
 
 void load_idt() {
   __asm__ __volatile__
@@ -129,8 +137,8 @@ void init_Idt() {
   
   set_interrupt_service_routine(32, INTERRUPT_GATE_TYPE_ATTR, pit_interrupt_service_routine);
   set_interrupt_service_routine(33, INTERRUPT_GATE_TYPE_ATTR, keyboard_interrupt_service_routine);
-  set_interrupt_service_routine(13, INTERRUPT_GATE_TYPE_ATTR, general_permission_fault);
-  set_interrupt_service_routine(14, INTERRUPT_GATE_TYPE_ATTR, general_page_fault);
+  set_interrupt_service_routine(13, INTERRUPT_GATE_TYPE_ATTR, helper_general_permission_fault_handler);
+  set_interrupt_service_routine(14, INTERRUPT_GATE_TYPE_ATTR, helper_page_fault_handler);
   set_interrupt_service_routine(127, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
   set_interrupt_service_routine(128, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
   s_Idtd[127].type = 0xEE;

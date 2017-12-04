@@ -138,10 +138,6 @@ void init_kernel_page_table(uint64_t kern_start, uint64_t kern_end, uint64_t
         entry |= (PTE_P | PTE_W );
         *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
     }
-    //kprintf("\nPML4[%d]: %p, PDPT[%d]: %p, PD[%d]: %p", pml4Index,
-    //        pml4_table->pml4_entries[pml4Index], pdptIndex,
-    //        pdpt_table->pdpt_entries[pdptIndex], pdIndex,
-    //        pd_table->pd_entries[pdIndex]);
     kprintf("\nkS: %p, kE: %p Phys_page_start %p Phys_page_end %p", kern_start,
             kern_end, get_phys_addr(s_cur_page_index), phys_page_end);
 
@@ -177,8 +173,8 @@ void map_free_pages(uint64_t phys_page_start, uint64_t phys_page_end) {
 }
 
 void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
-    uint16_t pml4Index = PML4_ENTRY_INDEX(vaddr);
-    uint16_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
+    uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
+    uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
     uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
     uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
 
@@ -240,13 +236,16 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
     return;
 }
 
+void dummy() {
+   kprintf("DUMMY !!!!");
+}
 
 void page_fault_handler(uint64_t vaddr)
 {
     uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
     uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
-    /*uint16_t pdIndex = PD_ENTRY_INDEX(vaddr);
-    uint16_t ptIndex = PT_ENTRY_INDEX(vaddr);*/
+    uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
+    uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
 
     uint64_t pml4_table = s_pml4_table; //s_init_process->pml4);
     kprintf("\n PML4  (%p) KB: %p s_pml4_table: %p ", pml4_table, KB, s_pml4_table);
@@ -264,12 +263,13 @@ void page_fault_handler(uint64_t vaddr)
             return;
         }
     }
-    /*uint64_t pdpt_entry = pdpt_table->pdpt_entries[pdptIndex];
+    uint64_t v_pdpt_table = KB + pdpt_table;
+    uint64_t pdpt_entry = *(uint64_t *)(v_pdpt_table + (sizeof(uint64_t) * pdptIndex));
     kprintf(" PDPT = %p  ", pdpt_entry);
-    PD* pd_table;
+    uint64_t pd_table;
     if(pdpt_entry & PTE_P) {
-        pd_table = (PD *)(pdpt_entry);
-        kprintf(" Pd Table = %p  ", (uint64_t)pd_table);
+        pd_table = pdpt_entry;
+        kprintf(" Pd Table = %p  ", pd_table);
     }
     else{
         pd_table = create_pd_table(pdpt_table, (sizeof(uint64_t) * pdptIndex), 1);
@@ -278,12 +278,13 @@ void page_fault_handler(uint64_t vaddr)
             return;
         }
     }
-    uint64_t pd_entry = pd_table->pd_entries[pdIndex];
+    uint64_t v_pd_table = KB + pd_table;
+    uint64_t pd_entry = *(uint64_t *)(v_pd_table + (sizeof(uint64_t) * pdIndex));
     kprintf(" PD = %p  ", pd_entry);
-    PT* pt_table;
+    uint64_t pt_table;
     if(pd_entry & PTE_P) {
-        pt_table = (PT *)(pd_entry);
-        kprintf(" PT table = %p  ", (uint64_t)pt_table);
+        pt_table = pd_entry;
+        kprintf(" PT table = %p  ", pt_table);
     }
     else{
         pt_table = create_pt_table(pd_table, (sizeof(uint64_t) * pdIndex), 1);
@@ -292,21 +293,26 @@ void page_fault_handler(uint64_t vaddr)
             return;
         }
     }
-    uint64_t vaddr_pt = (uint64_t)pt_table;
-    uint64_t pt_entry = ((PT*)vaddr_pt)->pt_entries[ptIndex];
+    uint64_t vaddr_pt = KB + pt_table;
+    uint64_t pt_entry = *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex));
+    kprintf(" PTI : %d  [%p - %p] \n", ptIndex, vaddr_pt, pt_entry);
     if(pt_entry & PTE_P) {
         kprintf("kernel panic: User permission not set. Why Page fault? !!!");
-        return;
+        /*uint64_t entry = allocate_phys_page();
+        entry |= (PTE_P | PTE_W | PTE_U);
+        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
+        dummy();*/
     }
     else{
         uint64_t entry = allocate_phys_page();
-        entry |= (PTE_P | PTE_W | PTE_U);
-        pt_table->pt_entries[ptIndex] = (uint64_t)entry;
-    }*/
+        entry |= (PTE_P | PTE_W | PTE_U );
+        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
+        //while(1) {}
+    }
     return;
 }
 
-void flush_tlb_entry(void *addr){
+void flush_tlb_entry(uint64_t addr){
     __asm__ __volatile__("cli");
     __asm__ __volatile__( "invlpg (%0)" : : "b"(addr) : "memory" );
     __asm__ __volatile__("sti");
@@ -319,12 +325,12 @@ void set_cr3_register(uint64_t addr){
     return;
 }
 
-void* convert_virtual_to_phys(uint64_t vaddr) {
-   return (void *) ( vaddr & ~(KB));
+uint64_t convert_virtual_to_phys(uint64_t vaddr) {
+   return (uint64_t) ( vaddr & ~(KB));
 }
 
-void* convert_phys_to_virtual(uint64_t physaddr) {
-    return (void *)(KB + physaddr);
+uint64_t convert_phys_to_virtual(uint64_t physaddr) {
+    return (uint64_t)(KB + physaddr);
 }
 
 

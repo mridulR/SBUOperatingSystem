@@ -20,6 +20,8 @@ extern Idtr s_Idtr;
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
+uint64_t PS = 0x1000;
+extern uint64_t KB;
 
 uint64_t current_width = 0;
 uint64_t current_height = 0;
@@ -79,9 +81,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
   // Create Init process
   s_init_process = create_task(0);
-  s_init_process->kernel_rsp = (uint64_t)&(s_init_process->kstack[4096]);
-  s_init_process->user_rsp =   (uint64_t)&(s_init_process->ustack[4096]);
-
+  s_init_process->kernel_rsp = KB + s_init_process->kstack + PS;
+  s_init_process->user_rsp   = KB + s_init_process->ustack + PS;
   __asm__ __volatile__
   ( 
     "movq %0, %%rsp\n"

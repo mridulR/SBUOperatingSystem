@@ -28,24 +28,12 @@
 
 extern uint64_t PAGE_SIZE;
 
-// Page Mapping level 4
-/*uint64_t PML4[PAGE_MAPPING_LEVEL4_ENTRY_COUNT];
-
-// Page directory pointer table
-uint64_t PDPT[PAGE_DIRECTORY_POINTER_TABLE_ENTRY_COUNT];
-
-// Page directory table 
-uint64_t PD[PAGE_DIRECTORY_ENTRY_COUNT];
-
-// Page table entry
-uint64_t PT[PAGE_TABLE_ENTRY_COUNT];*/
-
 // Initializes the Page table
 void init_kernel_page_table(uint64_t kern_start, uint64_t kern_end, uint64_t
                             phys_page_start, uint64_t phys_page_end);
 
 // Flushes the entry in the page table by setting the present bit to 0
-void flush_tlb_entry(void *addr);
+void flush_tlb_entry(uint64_t addr);
 
 // Set the cr3 register 
 void set_cr3_register(uint64_t addr);
@@ -62,9 +50,9 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user);
 
 void map_free_pages(uint64_t phys_page_start, uint64_t phys_page_end);
 
-void* convert_virtual_to_phys(uint64_t vaddr);
+uint64_t convert_virtual_to_phys(uint64_t vaddr);
 
-void* convert_phys_to_virtual(uint64_t physaddr);
+uint64_t convert_phys_to_virtual(uint64_t physaddr);
 
 uint64_t readCR2();
 
