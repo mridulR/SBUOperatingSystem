@@ -6,14 +6,18 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/types.h>
+#include <sys/phys_pages.h>
+#include <sys/page_table.h>
 
 #define PAGE_SIZE 0x1000
+
 
 Process_queue s_process_queue[2048];
 
 uint64_t s_free_process_count      = 2048;
 uint64_t s_max_process_count       = 2048;
 uint64_t s_cur_free_process_index  = 0;
+extern uint64_t s_pml4_table;
 
 task_struct* s_run_queue_head = NULL;
 task_struct* s_run_queue_tail = NULL;
@@ -135,6 +139,10 @@ task_struct* create_task(uint64_t ppid) {
     task->state = RUNNING;
     task->mode = KERNEL;
     task->rip = 0;
+    task->pml4 = allocate_phys_page();
+    //task->pml4 = (uint8_t *)allocate_phys_page();
+    kprintf(" USER PML4: %p ", task->pml4);
+    //memcpy((uint8_t *)(0xFFFFFFFF80000000 + task->pml4), (0xFFFFFFFF80000000 + s_pml4_table), PAGE_SIZE);
     task->next = NULL;
     task->prev = NULL;
     memset(&(task->name),'\0', 256);
@@ -252,6 +260,12 @@ void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
     s_sbush_process = create_task(0);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
+   // __asm__ __volatile__("cli\n");
+    //set_cr3_register((PML4 *)s_init_process->pml4);
+    //__asm__ __volatile__("sti\n");
+    //uint64_t *ptr = (uint64_t *)0x300000;
+    //*ptr = 99; 
+    //kprintf(" %d " , *ptr); 
     //switch_to_ring3();
     //test_user_function();
     return;

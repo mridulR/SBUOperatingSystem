@@ -23,6 +23,8 @@ static Idtr __attribute__((used)) s_Idtr = {0};
 
 Idtd s_Idtd[MAX_NUM_INTERRUPTS] = {{0}};
 
+//static int fault_count = 0;
+
 void enable_Interrupts() {
   //Disable ISR's first
   __asm__ __volatile__
@@ -71,7 +73,7 @@ void general_page_fault() {
     );
     kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
     kprintf("\nCR2 Value: %p", ret);
-    page_fault_handler(ret);
+    //page_fault_handler(ret);
     while(1) {}
 }
 
