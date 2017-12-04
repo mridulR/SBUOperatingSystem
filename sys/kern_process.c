@@ -3,11 +3,16 @@
 #include <sys/kprintf.h>
 #include <sys/memset.h>
 #include <sys/memcpy.h>
+#include <sys/vfs.h>
+#include <sys/elf64.h>
+#include <sys/kstring.h>
+#include <sys/tarfs.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/types.h>
 #include <sys/phys_pages.h>
 #include <sys/page_table.h>
+#include <sys/vma.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -154,6 +159,10 @@ task_struct* create_task(uint64_t ppid) {
         memcpy(&(task->name),"Process", 7);
         return task;
     }
+
+    //vma entries
+    task->vma_root = NULL;
+    task->heap_top = 0;   // Should be filled from elf file    
     return task;
 }
 
@@ -242,6 +251,8 @@ void switch_to_ring3() {
     kprintf("\nResuming Process 2.2");
     kprintf(" c = %d", c);
     switch_to(s_task_2, s_task_1);
+    kprintf("\nResuming Process 2.3\n");
+
     kprintf("\nResuming Process 2.3");
     kprintf(" c = %d", c);
     uint8_t *ptr = (uint8_t *)0xFFFFFFFF802000B0;
@@ -256,6 +267,114 @@ void schedule() {
 
 }
 
+void test_vma_print_empty_vma_list() {
+   print_vma();
+}
+
+void test_vma_find_node_from_empty_vma_list() {
+    vma *node = find_vma(30);
+     if (node == NULL) {
+        kprintf("\nPASS : Node search from empty list is NULL");
+     } else {
+        kprintf("\nFAIL : Node search from empty list is not NULL");
+     }
+}
+
+void test_vma_add_node_to_empty_vma_list() {
+    if(add_vma(12345)) {
+        vma * node = find_vma(0); // This is heap top now
+        if (node == NULL) {
+            kprintf("\nFAIL : searching node after adding to empty vma list failed");
+        } else {
+            if (node->start_addr == 0 && node->end_addr == 12345) {
+                if(delete_vma(0)) {
+                    node = find_vma(0);
+                    if (node == NULL) {
+                        kprintf("\nPASS : EmptyList -> Add -> find -> delete -> find");
+                    } else {
+                        kprintf("\nFAIL : Deleting node after adding to empty vma list unsuccessful");
+                    }
+                } else {
+                    kprintf("\nFAIL : Deleting node after adding to empty vma list failed");
+                }                
+            } else {
+                kprintf("\nFAIL : searching node after adding to empty vma list returned wrong node");
+            }
+        }
+    } else {
+        kprintf("\nFAIL : Adding node to empty VMA list failed");
+    }
+}
+
+void test_vma_operations_on_bigger_list() {
+    s_cur_run_task->heap_top = 0; // Initializing vma again
+    add_vma(1); // start = 0, end = 1
+    add_vma(2); // start = 1, end = 3
+    add_vma(3); // start = 3, end = 6
+    add_vma(4); // start = 6, end = 10
+    add_vma(5); // start = 10, end = 15
+    add_vma(5); // start = 15, end = 20
+    add_vma(4); // start = 20, end = 24
+    add_vma(3); // start = 24, end = 27
+    
+    print_vma();
+    vma * node = find_vma(15);
+    if (node != NULL && node->start_addr == 15 && node->end_addr == 20) {
+        kprintf("\nPASS : Search middle element from list");
+    } else {
+        kprintf("\nFAIL : Search middle element from list");
+    }
+
+    node = find_vma(0);
+    if (node != NULL && node->start_addr == 0 && node->end_addr == 1) {
+        kprintf("\nPASS : Search last element from list");
+    } else {
+        kprintf("\nFAIL : Search last element from list");
+    }
+
+    node = find_vma(24);
+    if (node != NULL && node->start_addr == 24 && node->end_addr == 27) {
+        kprintf("\nPASS : Search first element from list");
+    } else {
+        kprintf("\nFAIL : Search first element from list");
+    }
+
+    delete_vma(15);
+    node = find_vma(15);
+    if (node != NULL && node->start_addr == 15 && node->end_addr == 20) {
+        kprintf("\nFAIL : Search middle element from list after delete");
+    } else {
+        kprintf("\nPASS : Search middle element from list after delete");
+    }  
+
+    delete_vma(0);
+    node = find_vma(0);
+    if (node != NULL && node->start_addr == 0 && node->end_addr == 1) {
+        kprintf("\nFAIL : Search last element from list after delete");
+    } else {
+        kprintf("\nPASS : Search last element from list after delete");
+    }
+
+    delete_vma(24);
+    node = find_vma(24);
+    if (node != NULL && node->start_addr == 24 && node->end_addr == 27) {
+        kprintf("\nFAIL : Search first element from list after delete");
+    } else {
+        kprintf("\nPASS : Search first element from list after delete");
+    }
+
+    print_vma();
+}
+
+void test_vma_operations() {
+     s_cur_run_task = s_init_process;
+     test_vma_print_empty_vma_list();
+     test_vma_find_node_from_empty_vma_list();
+     test_vma_add_node_to_empty_vma_list();
+     test_vma_operations_on_bigger_list();
+}
+
+
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
     s_sbush_process = create_task(0);
@@ -267,6 +386,15 @@ void LaunchSbush(){
     //uint64_t *ptr = (uint64_t *)addr;
     //*ptr = 99; 
     //kprintf(" BINGO %d !!!" , *ptr); 
+
+    s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
+    if (s_sbush_process == NULL) {
+        kprintf("\nSBUSH launch not implemented.....\n");
+    }
+
+    test_vma_operations();
+
+    //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     //switch_to_ring3();
     //test_user_function();
     while(1) {}
@@ -275,8 +403,11 @@ void LaunchSbush(){
 
 void init_start() {
 
-    kprintf("\nInit Process Launched");
+    kprintf("\nInit Process Launched\n");
     init_process_queue();
+    init_tarfs();
+    print_node_inorder(root_node);
+
     LaunchSbush();
     while(1) {
         schedule();
@@ -293,6 +424,7 @@ void init_start() {
     while(1) { }
     return;
 }
+
 
 
 void test_process_queue() {

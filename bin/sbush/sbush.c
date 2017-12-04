@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int global_val = 1;
+
 int main(int argc, char *argv[], char *envp[]) {
-  return 0;
+    int local = 3;
+    local = global_val + 1;
+    global_val = local + 1;
+    return 0;
 }
 

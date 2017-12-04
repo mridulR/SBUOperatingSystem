@@ -3,6 +3,8 @@
 
 #define EI_NIDENT 16
 
+#include<sys/kern_process.h>
+
 typedef uint64_t Elf64_Addr;
 typedef uint16_t Elf64_Half;
 typedef uint64_t Elf64_Lword;
@@ -39,5 +41,9 @@ typedef struct {
   Elf64_Xword   p_memsz;
   Elf64_Xword   p_align;
 } Elf64_Phdr;
+
+
+task_struct * create_elf_process(char * file_name, char *argv[]);
+
 
 #endif
