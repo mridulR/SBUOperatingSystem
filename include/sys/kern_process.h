@@ -2,6 +2,7 @@
 #define _KERN_PROCESS_H
 
 #include <sys/types.h>
+#include <sys/vma.h>
 
 typedef enum State {
     INIT,
@@ -30,6 +31,9 @@ struct task_struct {
     struct task_struct *next;
     struct task_struct *prev;
     char name[256];
+    // For managing VMA
+    struct vma* vma_root;
+    uint64_t heap_top;
 }__attribute__((packed));
 
 typedef struct task_struct task_struct;
