@@ -27,7 +27,7 @@ struct task_struct {
     Mode mode;
     uint64_t rip;
     uint64_t pml4; 
-    uint8_t* pml4_ptr;
+    uint64_t entry_addr;
     State state;
     // Used for run_queue
     struct task_struct *next;

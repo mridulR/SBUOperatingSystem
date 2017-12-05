@@ -18,6 +18,7 @@
 #define PAGE_SIZE 0x1000
 
 extern uint64_t KB;
+extern uint64_t PS;
 
 Process_queue s_process_queue[2048];
 
@@ -136,18 +137,18 @@ task_struct* create_task(uint64_t ppid) {
         s_cur_free_process_index = s_process_queue[s_cur_free_process_index].nextIndex;
         --s_free_process_count;
     }
-    task->kernel_rsp = 0;
-    task->user_rsp = 0;
     task->kstack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->kstack), 0, PAGE_SIZE);
     task->ustack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
+    task->kernel_rsp = KB + task->kstack + PS;
+    task->user_rsp   = KB + task->ustack + PS;
     task->exit_status = 0;
     task->state = RUNNING;
     task->mode = KERNEL;
     task->rip = 0;
     task->pml4 = kmalloc(PAGE_SIZE);
-    kprintf(" USER PML4: %p ", task->pml4);
+    //kprintf(" USER PML4: %p ", task->pml4);
     memcpy((uint64_t *)(KB + task->pml4), (uint64_t *)(KB + s_pml4_table), PAGE_SIZE);
     task->next = NULL;
     task->prev = NULL;
@@ -160,7 +161,6 @@ task_struct* create_task(uint64_t ppid) {
         memcpy(&(task->name),"Process", 7);
         return task;
     }
-
     //vma entries
     task->vma_root = NULL;
     task->heap_top = 0;   // Should be filled from elf file    
@@ -390,23 +390,13 @@ void test_terminal() {
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
-    s_sbush_process = create_task(0);
-    kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
-    // __asm__ __volatile__("cli\n");
-    //set_cr3_register((PML4 *)s_init_process->pml4);
-    //__asm__ __volatile__("sti\n");
-    //uint64_t addr = 0x0000000000300000;
-    //uint64_t *ptr = (uint64_t *)addr;
-    //*ptr = 99; 
-    //kprintf(" BINGO %d !!!" , *ptr); 
-
     s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
+    kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     if (s_sbush_process == NULL) {
         kprintf("\nSBUSH launch not implemented.....\n");
     }
 
     test_vma_operations();
-    test_terminal();
 
     //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     //switch_to_ring3();
@@ -422,6 +412,7 @@ void init_start() {
     init_tarfs();
     print_node_inorder(root_node);
 
+    test_terminal();
     LaunchSbush();
     while(1) {
         schedule();
