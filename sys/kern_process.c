@@ -13,6 +13,7 @@
 #include <sys/phys_pages.h>
 #include <sys/page_table.h>
 #include <sys/vma.h>
+#include <sys/terminal.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -374,6 +375,18 @@ void test_vma_operations() {
      test_vma_operations_on_bigger_list();
 }
 
+void test_terminal() {
+    kprintf("\n Testing terminal \n");
+    uint64_t addr = KB + kmalloc(PAGE_SIZE);
+    char *buf = (char *)addr;
+
+    terminal_read(0, buf, PAGE_SIZE);
+    kprintf("\n Writing from terminal buffer =====> %s\n", buf);
+    //terminal_write(int fd, void * buf, uint64_t count); 
+     
+
+}
+
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
@@ -393,6 +406,7 @@ void LaunchSbush(){
     }
 
     test_vma_operations();
+    test_terminal();
 
     //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     //switch_to_ring3();

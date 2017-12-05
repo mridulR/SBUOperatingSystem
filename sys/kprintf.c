@@ -128,8 +128,18 @@ void HandleEverythingElse(char fmt, char* currAddr) {
 }
 
 void HandleChar(char ch, char* currAddr) {
-  *currAddr++ = ch;
-  *currAddr++ = 0x07;
+  if (ch == '\n') {
+     HandleNewLine();
+     return;
+  }
+  if (ch == '\b') {
+    currAddr--;
+    *currAddr-- = 0x07;
+    *currAddr = '\0';
+  } else {
+    *currAddr++ = ch;
+    *currAddr++ = 0x07;
+  }
   UpdateHeightWidth(currAddr);
 }
 

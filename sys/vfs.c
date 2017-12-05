@@ -275,8 +275,6 @@ v_file_node* search_file(char* dir_path, v_file_node * start_node) {
 				}
 			}
             return NULL;
-        } else {
-			return NULL;
         }
 	}
 	kfree((uint64_t)path);
