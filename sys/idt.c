@@ -17,6 +17,7 @@
 
 //32-bit Interrupt gate: 0x8E ( P=1, DPL=00, S=0, type=1110 => type_attr=1000_1110=0x8E)
 #define INTERRUPT_GATE_TYPE_ATTR 0x8E
+#define SYSCALL_GATE_TYPE_ATTR   0xEE
 
 // Initilizing the IDT structure
 static Idtr __attribute__((used)) s_Idtr = {0};
@@ -51,7 +52,6 @@ void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
     uint64_t ret = readCR2();
     uint64_t error = 0;
-    kprintf("\nCR2 Value: %p", ret);
     __asm__ __volatile__ 
     ( "movq %%rsp, %0\n"
       :"=r"(error)
@@ -85,7 +85,6 @@ void general_page_fault() {
 
 void helper_interrupt_service_routine() {
   kprintf("\nDEFAULT INTERRUPT HANDLER CALLED: ");
-
   while(1) {}
 }
 
@@ -114,8 +113,6 @@ void helper_syscall_handler() {
 
     kprintf(" Invoked syscall handler !!! SyscallNum = %p Arg2= %p ", syscallNum, arg2);
     return;
-    //__asm__ __volatile__("iretq\n");
-    //write_1(1, "WRITE TRIGGERED !!!",19);
 }
 
 // Initializes IDT and IDTR
@@ -139,10 +136,12 @@ void init_Idt() {
   set_interrupt_service_routine(33, INTERRUPT_GATE_TYPE_ATTR, keyboard_interrupt_service_routine);
   set_interrupt_service_routine(13, INTERRUPT_GATE_TYPE_ATTR, helper_general_permission_fault_handler);
   set_interrupt_service_routine(14, INTERRUPT_GATE_TYPE_ATTR, helper_page_fault_handler);
-  set_interrupt_service_routine(127, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
-  set_interrupt_service_routine(128, INTERRUPT_GATE_TYPE_ATTR, syscall_handler);
-  s_Idtd[127].type = 0xEE;
-  s_Idtd[128].type = 0xEE;
+
+  set_interrupt_service_routine(127, SYSCALL_GATE_TYPE_ATTR, syscall_handler);
+  set_interrupt_service_routine(128, SYSCALL_GATE_TYPE_ATTR, syscall_handler);
+
+  //s_Idtd[127].type = 0xEE;
+  //s_Idtd[128].type = 0xEE;
   // Load the IDT
   //load_idt();
    __asm__ __volatile__
