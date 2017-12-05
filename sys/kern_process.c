@@ -147,7 +147,7 @@ task_struct* create_task(uint64_t ppid) {
     task->mode = KERNEL;
     task->rip = 0;
     task->pml4 = kmalloc(PAGE_SIZE);
-    kprintf(" USER PML4: %p ", task->pml4);
+    //kprintf(" USER PML4: %p ", task->pml4);
     memcpy((uint64_t *)(KB + task->pml4), (uint64_t *)(KB + s_pml4_table), PAGE_SIZE);
     task->next = NULL;
     task->prev = NULL;
@@ -377,28 +377,11 @@ void test_vma_operations() {
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
-    //s_sbush_process = create_task(0);
-    // __asm__ __volatile__("cli\n");
-    //set_cr3_register((PML4 *)s_init_process->pml4);
-    //__asm__ __volatile__("sti\n");
-    /*page_fault_handler(0x0000000000300000);
-    uint64_t addr = 0x0000000000300000;
-    uint64_t *ptr = (uint64_t *)addr;
-    *ptr = 99; 
-    kprintf(" BINGO %d !!!" , *ptr); 
-    while(1) {}*/
     s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     if (s_sbush_process == NULL) {
         kprintf("\nSBUSH launch not implemented.....\n");
     }
-    //startSbush(s_sbush_process->entry_addr);
-    //test_vma_operations();
-
-    //kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
-    //switch_to_ring3();
-    //test_user_function();
-    
     while(1) {}
     return;
 }

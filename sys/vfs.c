@@ -21,15 +21,15 @@ void print_node_inorder(v_file_node* root) {
         return;
     }
 
-    kprintf("File Name = %s, File Type isDir = %d, parent = %s , no_of_child = %d\n", 
-        root->v_name, root->is_dir,    root->parent == NULL ? "NULL" : root->parent->v_name, root->no_of_child);    
+    //kprintf("File Name = %s, File Type isDir = %d, parent = %s , no_of_child = %d\n", 
+        //root->v_name, root->is_dir,    root->parent == NULL ? "NULL" : root->parent->v_name, root->no_of_child);    
 
     for (uint64_t i = 0; i < root->no_of_child; i++) {
     v_file_node *child = root->v_child[i];
     if (child->is_dir == false) {
-        kprintf("File Name = %s, File Type isDir = %d, parent = %s, no_of_child = %d\n",
-             child->v_name, child->is_dir, child->parent == NULL ? "NULL" : child->parent->v_name,
-             child->no_of_child);
+        //kprintf("File Name = %s, File Type isDir = %d, parent = %s, no_of_child = %d\n",
+             //child->v_name, child->is_dir, child->parent == NULL ? "NULL" : child->parent->v_name,
+             //child->no_of_child);
      } else {
          print_node_inorder(child);
        }
