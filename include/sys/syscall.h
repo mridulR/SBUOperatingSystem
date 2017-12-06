@@ -37,32 +37,54 @@
 #define __NR_lseek_64 8
 
 
-int read(int fd, void *buf, int size);
-/*{
-    int ret;
+int read(int fd, void *buf, int size) {
+
+    uint64_t ret = 0;
+    uint64_t syscall_num = (uint64_t)__NR_read_64;
+    uint64_t arg1 = (uint64_t)fd;
+    uint64_t arg2 = (uint64_t)buf;
+    uint64_t arg3 = (uint64_t)size;
 
     __asm__ __volatile__
     (
-        "int $0x80;\n"
-        : "=a" (ret)
-        : "0"(__NR_read_64), "b"(fd), "c"(buf), "d"(size)
-        : "cc", "memory"
-    );
-    return 1;
-}*/
-
-int write(int fd, const void *buf, int size);
-/*{
-    int ret;
-    __asm__ __volatile__
-    (
+        "movq %1,%%rdi\n"
+        "movq %2,%%rsi\n"
+        "movq %3,%%rdx\n"
+        "movq %4,%%rcx\n"
         "int $0x80\n"
-        : "=a" (ret)
-        : "0"(__NR_write_64), "b"(fd), "c"(buf), "d"(size)
+        "movq %%rax,%0\n"
+        : "=r" (ret)
+        : "r"(syscall_num) , "r"(arg1), "r"(arg2), "r"(arg3)
+    );
+    return (int)ret;
+}
+
+
+int write(int fd, const void *buf, int size) {
+
+    uint64_t ret;
+    uint64_t syscall_num = (uint64_t)__NR_write_64;
+    uint64_t arg1 = (uint64_t)fd;
+    uint64_t arg2 = (uint64_t)buf;
+    uint64_t arg3 = (uint64_t)size;
+
+
+    __asm__ __volatile__
+    (
+        "movq %1,%%rdi\n"
+        "movq %2,%%rsi\n"
+        "movq %3,%%rdx\n"
+        "movq %4,%%rcx\n"
+        "int $0x80;\n"
+        "movq %%rax,%0\n"
+        : "=r" (ret)
+        : "r"(syscall_num), "r"(arg1), "r"(arg2), "r"(arg3)
         : "cc", "memory"
     );
-    return ret;
-}*/
+    return (int)ret;
+}
+
+
 
 /*int getpid()
 {

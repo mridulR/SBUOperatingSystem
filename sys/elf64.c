@@ -95,6 +95,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     elf_task->user_rsp   = UB + PS;
     elf_task->mode = USER;
 
+    //map_process_address_space(elf_task->user_rsp, 4096);
     // Reset prgm header
     prgm_header = (Elf64_Phdr *) ((void *) elf_header + elf_header->e_phoff);
     

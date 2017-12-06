@@ -4,8 +4,11 @@
 #include <sys/types.h>
 #include <sys/asm_util.h>
 #include <sys/page_table.h>
+#include <sys/kern_process.h>
 
+#define __NR_read_64 0
 #define __NR_write_64 1
+
 
 /* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
                        changed. Also system calls can be executed in userspace (ring 3, see this) 
@@ -44,6 +47,8 @@ void disable_Interrupts() {
   return;  
 }
 
+extern task_struct * s_cur_run_task;
+
 extern void pit_interrupt_service_routine();
 extern void keyboard_interrupt_service_routine();
 extern void helper_general_permission_fault_handler();
@@ -80,7 +85,7 @@ void general_page_fault() {
     __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
     __asm__ __volatile__ ("sti\n" : : );
  
-    //while(1) {}
+    while(1) {}
 }
 
 void helper_interrupt_service_routine() {
@@ -99,21 +104,64 @@ void load_idt() {
   );
 }
 
+
+uint64_t handle_read_sys_call(uint64_t arg1, uint64_t arg2, uint64_t arg3) {
+    return (*(s_cur_run_task->term_oprs.terminal_read))(arg1, (void *)arg2, arg3);
+}
+
+uint64_t handle_write_sys_call(uint64_t arg1, uint64_t arg2, uint64_t arg3) {
+    return (*(s_cur_run_task->term_oprs.terminal_write))(arg1, (void *)arg2, arg3);
+}
+
 void syscall_handler();
 
 void helper_syscall_handler() {
+    uint64_t retval = 0;
     uint64_t syscallNum = 0;
+    uint64_t arg1 = 0;
     uint64_t arg2 = 0;
+    uint64_t arg3 = 0;
+    uint64_t arg4 = 0;
+    uint64_t arg5 = 0;
+    uint64_t arg6 = 0;
+
+    // Read all the arguments from regs. 
     __asm__ __volatile__ 
-    (  "movq %%rsi, %0\n"
-       "movq %%rdi, %1\n"
-       :"=r"(syscallNum), "=r"(arg2)
+    (  "movq %%r8,%0\n"
+       "movq %%r9,%1\n"
+       "movq %%r10,%2\n"
+       "movq %%r11,%3\n"
+       "movq %%r12,%4\n"
+       "movq %%r13,%5\n"
+       "movq %%r14,%6\n"    
+       :"=r"(syscallNum), "=r"(arg1), "=r"(arg2), "=r"(arg3), "=r"(arg4), "=r"(arg5), "=r"(arg6)
        :
+       :"r15"
     );
 
-    *(char *)arg2 = 'a';
-    kprintf(" Invoked syscall handler !!! SyscallNum = %p Arg2= %p *arg2 = %c ", syscallNum, arg2, *(char*)arg2);
-    //while(1) {}
+    switch(syscallNum) {
+        case __NR_read_64 :
+            kprintf("\nRead sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
+            retval = handle_read_sys_call(arg1, arg2, arg3);
+            kprintf("\n read return value - %d\n", retval);
+            break;
+        case __NR_write_64 :
+            kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
+            //retval = handle_write_sys_call(arg1, arg2, arg3);
+            kprintf("\n write return value - %d \n", retval);
+            break;
+        default:
+            kprintf("\nSyascall no %p is not implemented, \n", syscallNum);
+    }
+    // Update the result in rax reg.
+    __asm__ __volatile__
+    (
+      "movq %0,%%r15\n"
+      :
+      :"r"(retval)
+      :
+    );
+    kprintf(" RETVAL : %d ", retval);
     return;
 }
 

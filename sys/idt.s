@@ -4,6 +4,7 @@
 
 .text
 
+
 .global default_interrupt_service_routine 
 default_interrupt_service_routine:
   push %rax
@@ -72,6 +73,7 @@ syscall_handler:
   pop %rcx
   pop %rbx
   pop %rax
+  movq $5,%r15
   iretq
 
 .global helper_page_fault_handler 

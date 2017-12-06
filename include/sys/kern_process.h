@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/vma.h>
+#include <sys/terminal.h>
 
 typedef enum State {
     INIT,
@@ -36,6 +37,10 @@ struct task_struct {
     // For managing VMA
     struct vma* vma_root;
     uint64_t heap_top;
+    //Terminal operations
+    struct terminal_operation_pntrs term_oprs;
+    char * terminal_buffer;
+    
 }__attribute__((packed));
 
 typedef struct task_struct task_struct;
