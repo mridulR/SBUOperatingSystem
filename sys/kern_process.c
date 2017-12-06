@@ -391,6 +391,7 @@ void test_terminal() {
         terminal_enqueue('b');
         count++;
     }
+	terminal_enqueue('\n');
 
     while(1) {
     int len = terminal_read(0, buf, PAGE_SIZE);
@@ -429,7 +430,7 @@ void init_start() {
     print_node_inorder(root_node);
 
     //test_terminal();
-    LaunchSbush();
+	LaunchSbush();
     while(1) {
         schedule();
     }

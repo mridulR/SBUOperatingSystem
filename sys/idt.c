@@ -8,6 +8,9 @@
 
 #define __NR_read_64 0
 #define __NR_write_64 1
+#define __NR_getpid_64 39
+#define __NR_mmap_64 9 
+#define __NR_munmap_64 11
 
 
 /* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
@@ -113,6 +116,11 @@ uint64_t handle_write_sys_call(uint64_t arg1, uint64_t arg2, uint64_t arg3) {
     return (*(s_cur_run_task->term_oprs.terminal_write))(arg1, (void *)arg2, arg3);
 }
 
+uint64_t handle_get_pid_sys_call() {
+	kprintf("\nHanlde get pid invoked - %d \n", s_cur_run_task->pid);
+	return s_cur_run_task->pid;
+}
+
 void syscall_handler();
 
 void helper_syscall_handler() {
@@ -147,9 +155,18 @@ void helper_syscall_handler() {
             break;
         case __NR_write_64 :
             kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
-            //retval = handle_write_sys_call(arg1, arg2, arg3);
+            retval = handle_write_sys_call(arg1, arg2, arg3);
             kprintf("\n write return value - %d \n", retval);
             break;
+		case __NR_getpid_64 :
+			retval = handle_get_pid_sys_call();
+			break;
+		case __NR_mmap_64 :
+			kprintf("\n Mmap was called\n");
+			break;
+		case __NR_munmap_64 :
+			kprintf("\n Munmap was called\n");
+			break;	
         default:
             kprintf("\nSyascall no %p is not implemented, \n", syscallNum);
     }
