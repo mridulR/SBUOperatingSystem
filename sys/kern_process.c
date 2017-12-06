@@ -382,6 +382,7 @@ void LaunchSbush(){
     if (s_sbush_process == NULL) {
         kprintf("\nSBUSH launch not implemented.....\n");
     }
+    kprintf(" Test: in kern_process.c");
     //test_vma_operations();
     //test_user_function();
     while(1) {}

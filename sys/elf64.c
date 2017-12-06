@@ -55,7 +55,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     set_cr3_register(elf_task->pml4);
     
     // Main Function => 0000000000400105
-    uint64_t entry_addr = 0x0000000000400105;
+    uint64_t entry_addr = 0x00000000004000cd;
 
     elf_task->entry_addr = entry_addr;
 
@@ -126,6 +126,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
 
     // Switch to ring3 
     my_switch_to_ring3(elf_task);
+    kprintf(" Test: in Elf64.c");
 
 }
 

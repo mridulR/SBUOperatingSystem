@@ -120,7 +120,7 @@ int find_cmdslot(hba_port_t *port)
     return -1;
 }
 
-BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
+BOOL ahci_write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 {
     port->is_rwc = (DWORD)-1;        // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
@@ -213,7 +213,7 @@ BOOL write(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
     return TRUE;
 }
 
-BOOL read(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
+BOOL ahci_read(hba_port_t *port, DWORD startl, DWORD starth, DWORD count, WORD *buf)
 {
     port->is_rwc = (DWORD)-1;        // Clear pending interrupt bits
     int spin = 0; // Spin lock timeout counter
@@ -480,7 +480,7 @@ void init_ahci() {
         memset(writeBuffer[0], '\0', BLOCK_SIZE);
         memset(writeBuffer[0], 0x32+i+1, BLOCK_SIZE-1);
         g_SATA_PORT_INDEX = 0;
-        write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[0]);
+        ahci_write(&abar->ports[g_SATA_PORT_INDEX], wstartl, wstarth, 8, (WORD *)writeBuffer[0]);
         wstartl = wstartl + 8;
       }
     
@@ -489,7 +489,7 @@ void init_ahci() {
         readBuffer[i] = NULL;
         int readCount = 0;
         //char byteVal = '\0';
-        read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
+        ahci_read(&abar->ports[g_SATA_PORT_INDEX], rstartl, rstarth, 8, (WORD *)readBuffer[0]);
         //byteVal = *readBuffer[0];
         rstartl = rstartl + 8;
         readCount = readCount + str_len(readBuffer[0]);

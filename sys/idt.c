@@ -111,7 +111,9 @@ void helper_syscall_handler() {
        :
     );
 
-    kprintf(" Invoked syscall handler !!! SyscallNum = %p Arg2= %p ", syscallNum, arg2);
+    *(char *)arg2 = 'a';
+    kprintf(" Invoked syscall handler !!! SyscallNum = %p Arg2= %p *arg2 = %c ", syscallNum, arg2, *(char*)arg2);
+    //while(1) {}
     return;
 }
 
