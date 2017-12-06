@@ -56,6 +56,8 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     
     // Main Function => 0000000000400105
     uint64_t entry_addr = 0x00000000004000cd;
+    //uint64_t entry_addr = (uint64_t)elf_header->e_entry;
+    kprintf("\n Entry of main is - %p \n", (uint64_t)elf_header->e_entry);
 
     elf_task->entry_addr = entry_addr;
 

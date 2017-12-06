@@ -17,18 +17,21 @@ struct terminal_operation_pntrs terminal_operations = {
 
 int64_t terminal_read(int fd, void * buf, uint64_t count) {
     is_flushed = false;
-    memset(terminal_buffer, '\0', buffer_length);
+    memset(terminal_buffer, '\0', 4095);
+    memset(buf, '\0', count);
     bool is_read_done = is_flushed;
     while (!is_read_done) {
         // wait till \n is pressed
         is_read_done = is_flushed;
     }
     memcpy(buf, terminal_buffer, buffer_length);
-    memset(terminal_buffer, '\0', buffer_length);
-    count = buffer_length;
+    ((char *)(buf))[buffer_length] = '\0';
+    memset(terminal_buffer, '\0', 4095);
+    int result = buffer_length;
     buffer_length = 0;
-    return count;
+    return result;
 }
+
 
 int64_t terminal_write(int fd, void * buf, uint64_t count) {
     ((char *) (buf))[count] = '\0';
@@ -40,6 +43,13 @@ void terminal_enqueue(char ch) {
     if ((int)(ch) == 0) {
        return; // This is key release
     }
+    if (buffer_length >= 4000) {
+        kprintf("\n Terminal buffer full. Emptying buffer at this time. Retry with 4000 chars limit \n");
+        memset(terminal_buffer, '\0', 4095);
+        buffer_length = 0;
+        is_flushed = true;
+        return;
+    }
     kprintf("%c", ch);
     if (ch == '\b') {
         terminal_buffer[buffer_length] = '\0';
@@ -49,7 +59,6 @@ void terminal_enqueue(char ch) {
     }
     if (ch == '\n') {
         terminal_buffer[buffer_length] = '\0';
-        kprintf("\n Enter was pressed\n");
         is_flushed = true;
         return;
     }

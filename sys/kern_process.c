@@ -380,11 +380,21 @@ void test_terminal() {
     uint64_t addr = KB + kmalloc(PAGE_SIZE);
     char *buf = (char *)addr;
 
-    terminal_read(0, buf, PAGE_SIZE);
-    kprintf("\n Writing from terminal buffer =====> %s\n", buf);
-    //terminal_write(int fd, void * buf, uint64_t count); 
-     
+    uint64_t count = 0;
+    while(count != 4099) {
+        terminal_enqueue('b');
+        count++;
+    }
 
+    while(1) {
+    int len = terminal_read(0, buf, PAGE_SIZE);
+    kprintf("\n Writing buff received from terminal =====> %s\n", buf);
+    kprintf("\n Writing to terminal =======> ");
+    terminal_write(1, buf, len);
+    kprintf("\n");
+    }
+     
+    kfree((uint64_t) addr);
 }
 
 
