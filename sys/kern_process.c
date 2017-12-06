@@ -19,6 +19,8 @@
 
 extern uint64_t KB;
 extern uint64_t PS;
+extern int64_t terminal_read(int fd, void * buf, uint64_t count);
+extern int64_t terminal_write(int fd, void * buf, uint64_t count);
 
 Process_queue s_process_queue[2048];
 
@@ -155,15 +157,17 @@ task_struct* create_task(uint64_t ppid) {
     memset(&(task->name),'\0', 256);
     if(s_cur_free_process_index == 0) {
         memcpy(&(task->name),"SBUSH", 5);
-        return task;
     }
     else {
         memcpy(&(task->name),"Process", 7);
-        return task;
     }
     //vma entries
     task->vma_root = NULL;
-    task->heap_top = 0;   // Should be filled from elf file    
+    task->heap_top = 0;   // Should be filled from elf file
+    // Terminal Operations
+    task->term_oprs.terminal_read  = &terminal_read;         
+    task->term_oprs.terminal_write = &terminal_write;         
+
     return task;
 }
 

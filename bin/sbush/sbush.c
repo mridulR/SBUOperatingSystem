@@ -1,30 +1,64 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/syscall.h>
+
+#define __NR_read_64 0
+#define __NR_write_64 1
+
 
 int main(int argc, char *argv[], char *envp[]) {
-    int a = 40;
-    //int b = 30;
-    char ch;
+    
+    // Read sys cal testing
+
+    char buf[1024];
+    char write_buff[1024];
+    /*write_buff[0] = 'a';
+    write_buff[1] = 'b';
+    write_buff[2] = 'c';
+    write_buff[3] = 'd';
+    write_buff[4] = '\0';*/
+
+    uint64_t read_ret = 0;
+    uint64_t write_ret = 0;
+    uint64_t read_syscall_num = (uint64_t)__NR_read_64;
+    uint64_t write_syscall_num = (uint64_t)__NR_write_64;
+    uint64_t arg1 = 0;
+    uint64_t arg2 = (uint64_t)&buf;
+    uint64_t arg2_write = (uint64_t) &write_buff;
+    uint64_t arg3 = 1024;
+    uint64_t arg3_write = 4;
+
+    while (1) {
+
     __asm__ __volatile__
-    ( 
-        "movq %0, %%rsi\n"
-        "movq %1, %%rdi\n"
-        "int $0x80\n" 
-        :
-        :"r"((uint64_t)a), "r"((uint64_t)&ch)
+    (
+        "movq %1,%%r8\n"
+        "movq %2,%%r9\n"
+        "movq %3,%%r10\n"
+        "movq %4,%%r11\n"
+        "int $0x80\n"
+        "movq %%rax,%0\n"
+        : "=r" (read_ret)
+        : "g"(read_syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3)
+        : "r8", "r9", "r10", "r11"
+    );
+     
+    __asm__ __volatile__
+    (
+        "movq %1,%%r8\n"
+        "movq %2,%%r9\n"
+        "movq %3,%%r10\n"
+        "movq %4,%%r11\n"
+        "int $0x80\n"
+        "movq %%rax,%0\n"
+        : "=r" (write_ret)
+        : "g"(write_syscall_num), "g"(arg1), "g"(arg2_write), "g"(arg3_write)
+        : "r8", "r9", "r10", "r11"
     );
 
-    /*__asm__ __volatile__
-    ( 
-        "movq %0, %%rsi\n"
-        "movq %1, %%rdi\n"
-        "int $0x80\n" 
-        :
-        :"r"((uint64_t)ch), "r"((uint64_t)ch)
-    );*/
-    //char ch = 'A';
-    //putchar(ch);
+    }
+
+    
+
     while(1)  { }
     return 0;
 }
