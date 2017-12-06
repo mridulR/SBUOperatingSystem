@@ -139,10 +139,12 @@ task_struct* create_task(uint64_t ppid) {
     }
     task->kstack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->kstack), 0, PAGE_SIZE);
-    task->ustack = kmalloc(PAGE_SIZE);
-    memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
+    //task->ustack = kmalloc(PAGE_SIZE);
+    task->ustack = 0;
+    //memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
     task->kernel_rsp = KB + task->kstack + PS;
-    task->user_rsp   = KB + task->ustack + PS;
+    //task->user_rsp   = KB + task->ustack + PS;
+    task->user_rsp   = 0;
     task->exit_status = 0;
     task->state = RUNNING;
     task->mode = KERNEL;

@@ -15,7 +15,9 @@ typedef uint8_t bool;
 extern task_struct* s_init_process;
 extern task_struct* s_cur_run_task;
 
+uint64_t UB = 0x00000000F0000000;
 extern uint64_t PS;
+extern uint64_t PAGE_SIZE;
 
 void my_switch_to_ring3(task_struct *elf_task) {
     set_tss_rsp((uint64_t *)elf_task->kernel_rsp);
@@ -54,10 +56,9 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     // Load CR3
     set_cr3_register(elf_task->pml4);
     
-    // Main Function => 0000000000400105
-    uint64_t entry_addr = 0x00000000004000cd;
     //uint64_t entry_addr = (uint64_t)elf_header->e_entry;
     kprintf("\n Entry of main is - %p \n", (uint64_t)elf_header->e_entry);
+    uint64_t entry_addr = 0x00000000004000e8;
 
     elf_task->entry_addr = entry_addr;
 
@@ -68,8 +69,8 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
             uint64_t size = prgm_header->p_memsz;
             uint64_t end_va = start_va + size;
 
-            //kprintf("\n start - %p and end - %p", start_va, end_va);
-            //kprintf("\n PGM Hdr - %p ",  (elf_header + prgm_header->p_offset));
+            kprintf("\n start - %p and end - %p size %d ", start_va, end_va, size);
+            kprintf("\n PGM Hdr - %p ",  (elf_header + prgm_header->p_offset));
 
             if ((int)prgm_header->p_flags == 5)  {
                 // This is TEXT segment
@@ -88,6 +89,12 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
         prgm_header += 1;
     }
     
+    map_process_address_space(UB, 1);
+    memset((uint64_t *)(UB), 0, PAGE_SIZE);
+    
+    elf_task->user_rsp   = UB + PS;
+    elf_task->mode = USER;
+
     // Reset prgm header
     prgm_header = (Elf64_Phdr *) ((void *) elf_header + elf_header->e_phoff);
     
@@ -95,6 +102,10 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
     __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
     
+    /*uint64_t *ptr = (uint64_t *)0xEFFFFFF0;
+    *ptr = 24;
+    kprintf(" PTR = %d", *ptr);*/
+
     for (int i = 0; i < elf_header->e_phnum; ++i) {
         // Identify code and data segment
         if ((int)prgm_header->p_type == 1) {
@@ -102,13 +113,15 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
             uint64_t size = prgm_header->p_memsz;
             uint64_t end_va = start_va + size;
 
-            //kprintf("\n start - %p and end - %p", start_va, end_va);
-            //kprintf("\n PGM Hdr - %p ",  (elf_header + prgm_header->p_offset));
+            kprintf("\n start - %p and end - %p", start_va, end_va);
+            kprintf("\n PGM Hdr - %p ",  (elf_header + prgm_header->p_offset));
 
             if ((int)prgm_header->p_flags == 5) { 
                 // This is TEXT segment
                 // Memcopy bytes to virtual address causing page fault which should be handled
                 memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), size);
+                kprintf("\n Range1[ Size - %d,  %p - %p ]\n", size, (uint64_t)(elf_header + prgm_header->p_offset),
+                        (uint64_t)((elf_header + prgm_header->p_offset) + end_va));
                 //memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), prgm_header->p_filesz);
                 //kprintf("\nGot Text segment");
             } 
@@ -117,6 +130,8 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
                 // kprintf("\nGot Data segment");
                 // Memcopy bytes to virtual address causing page fault which should be handled
                 memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), size);
+                kprintf("\n Range2[ %p - %p ]\n", (uint64_t)(elf_header + prgm_header->p_offset),
+                        (uint64_t)((elf_header + prgm_header->p_offset) + end_va));
                 //memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), prgm_header->p_filesz);
             } 
             else {
