@@ -32,9 +32,8 @@ int64_t terminal_write(int fd, void * buf, uint64_t count) {
     if (count == 0) {
         return 0;
     }
-    kprintf("\n write invoked with %d --- %s\n", count, buf);
     ((char *) (buf))[count] = '\0';
-    kprintf(" aaaaa %s", buf);
+    kprintf("\n%s", buf);
     return count;
 }
 

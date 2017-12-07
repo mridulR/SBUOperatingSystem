@@ -45,17 +45,19 @@ int read(int fd, void *buf, int size) {
     uint64_t arg2 = (uint64_t)buf;
     uint64_t arg3 = (uint64_t)size;
 
-    __asm__ __volatile__
-    (
-        "movq %1,%%rdi\n"
-        "movq %2,%%rsi\n"
-        "movq %3,%%rdx\n"
-        "movq %4,%%rcx\n"
-        "int $0x80\n"
-        "movq %%rax,%0\n"
-        : "=r" (ret)
-        : "r"(syscall_num) , "r"(arg1), "r"(arg2), "r"(arg3)
-    );
+	 __asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"movq %2,%%r9\n"
+	"movq %3,%%r10\n"
+	"movq %4,%%r11\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (ret)
+	: "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3)
+	: "r8", "r9", "r10", "r11"
+	);
+
     return (int)ret;
 }
 
@@ -68,37 +70,42 @@ int write(int fd, const void *buf, int size) {
     uint64_t arg2 = (uint64_t)buf;
     uint64_t arg3 = (uint64_t)size;
 
+	__asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"movq %2,%%r9\n"
+	"movq %3,%%r10\n"
+	"movq %4,%%r11\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (ret)
+	: "g"(syscall_num), "g"(arg1), "g"(arg2), "g"(arg3)
+	: "r8", "r9", "r10", "r11"
+	);
 
-    __asm__ __volatile__
-    (
-        "movq %1,%%rdi\n"
-        "movq %2,%%rsi\n"
-        "movq %3,%%rdx\n"
-        "movq %4,%%rcx\n"
-        "int $0x80;\n"
-        "movq %%rax,%0\n"
-        : "=r" (ret)
-        : "r"(syscall_num), "r"(arg1), "r"(arg2), "r"(arg3)
-        : "cc", "memory"
-    );
     return (int)ret;
 }
 
 
 
-/*int getpid()
+int getpid()
 {
-  int ret;
-  __asm__ __volatile__
-  (
-      "syscall"
-      : "=a" (ret)
-      : "0"(__NR_getpid_64)
-      : "cc", "rcx", "r11"
-  );
-  return ret;
+
+	uint64_t syscall_num = (uint64_t)__NR_getpid_64;
+	 uint64_t pid = 0;
+	__asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (pid)
+	: "g"(syscall_num)
+    : 
+	);  
+  return (int) pid;
 }
 
+/*
 int open(const char *path, int permissions)
 {
     int fd;

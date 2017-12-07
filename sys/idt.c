@@ -149,14 +149,12 @@ void helper_syscall_handler() {
 
     switch(syscallNum) {
         case __NR_read_64 :
-            kprintf("\nRead sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
+            //kprintf("\nRead sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
             retval = handle_read_sys_call(arg1, arg2, arg3);
-            kprintf("\n read return value - %d\n", retval);
             break;
         case __NR_write_64 :
-            kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
+            //kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
             retval = handle_write_sys_call(arg1, arg2, arg3);
-            kprintf("\n write return value - %d \n", retval);
             break;
 		case __NR_getpid_64 :
 			retval = handle_get_pid_sys_call();
@@ -178,7 +176,7 @@ void helper_syscall_handler() {
       :"r"(retval)
       :
     );
-    kprintf(" RETVAL : %d ", retval);
+    //kprintf(" RETVAL : %d ", retval);
     return;
 }
 
