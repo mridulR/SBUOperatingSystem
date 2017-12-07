@@ -1,6 +1,6 @@
 #include <sys/syscall.h>
 
-int read(int fd, void *buf, int size)
+/*int read(int fd, void *buf, int size)
 {
     uint64_t ret;
     uint64_t syscall_num = (uint64_t)__NR_read_64;
@@ -43,6 +43,7 @@ int write(int fd, const void *buf, int size)
     );
     return (int)ret;
 }
+*/
 
 /*int getpid()
 {

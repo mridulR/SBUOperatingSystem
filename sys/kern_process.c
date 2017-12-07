@@ -19,6 +19,8 @@
 
 extern uint64_t KB;
 extern uint64_t PS;
+extern int64_t terminal_read(int fd, void * buf, uint64_t count);
+extern int64_t terminal_write(int fd, void * buf, uint64_t count);
 
 Process_queue s_process_queue[2048];
 
@@ -139,10 +141,12 @@ task_struct* create_task(uint64_t ppid) {
     }
     task->kstack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->kstack), 0, PAGE_SIZE);
-    task->ustack = kmalloc(PAGE_SIZE);
-    memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
+    //task->ustack = kmalloc(PAGE_SIZE);
+    task->ustack = 0;
+    //memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
     task->kernel_rsp = KB + task->kstack + PS;
-    task->user_rsp   = KB + task->ustack + PS;
+    //task->user_rsp   = KB + task->ustack + PS;
+    task->user_rsp   = 0;
     task->exit_status = 0;
     task->state = RUNNING;
     task->mode = KERNEL;
@@ -155,15 +159,17 @@ task_struct* create_task(uint64_t ppid) {
     memset(&(task->name),'\0', 256);
     if(s_cur_free_process_index == 0) {
         memcpy(&(task->name),"SBUSH", 5);
-        return task;
     }
     else {
         memcpy(&(task->name),"Process", 7);
-        return task;
     }
     //vma entries
     task->vma_root = NULL;
-    task->heap_top = 0;   // Should be filled from elf file    
+    task->heap_top = 0;   // Should be filled from elf file
+    // Terminal Operations
+    task->term_oprs.terminal_read  = &terminal_read;         
+    task->term_oprs.terminal_write = &terminal_write;         
+
     return task;
 }
 
@@ -385,6 +391,7 @@ void test_terminal() {
         terminal_enqueue('b');
         count++;
     }
+	terminal_enqueue('\n');
 
     while(1) {
     int len = terminal_read(0, buf, PAGE_SIZE);
@@ -421,9 +428,15 @@ void init_start() {
     init_process_queue();
     init_tarfs();
     print_node_inorder(root_node);
-
+    int count = 0;
+	while(count < 40) {
+		kprintf("\n");
+		count = count + 1;
+	}
+	clrscreen();
+	kprintf("\n writting fresh from here\n");
     //test_terminal();
-    LaunchSbush();
+	LaunchSbush();
     while(1) {
         schedule();
     }

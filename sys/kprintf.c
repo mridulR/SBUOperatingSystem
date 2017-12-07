@@ -257,3 +257,16 @@ void HandleUnsignedInt(unsigned int u_argVal, char* currAddr) {
   }
   UpdateHeightWidth(currAddr);
 }
+
+void clrscreen() {
+	char * baseAddr = (char *) VIDEO_BUFFER_BASE_ADDR;
+	char * endAddr =  getCurrentAddress();
+
+	while (baseAddr != endAddr) {
+		*baseAddr++ = '\0';
+		*baseAddr++ = 0x07;
+	}
+
+	current_height = 0;
+	current_width = 0;
+}

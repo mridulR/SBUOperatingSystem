@@ -37,46 +37,130 @@
 #define __NR_lseek_64 8
 
 
-int read(int fd, void *buf, int size);
-/*{
-    int ret;
+int read(int fd, void *buf, int size) {
 
-    __asm__ __volatile__
-    (
-        "int $0x80;\n"
-        : "=a" (ret)
-        : "0"(__NR_read_64), "b"(fd), "c"(buf), "d"(size)
-        : "cc", "memory"
-    );
-    return 1;
-}*/
+    uint64_t ret = 0;
+    uint64_t syscall_num = (uint64_t)__NR_read_64;
+    uint64_t arg1 = (uint64_t)fd;
+    uint64_t arg2 = (uint64_t)buf;
+    uint64_t arg3 = (uint64_t)size;
 
-int write(int fd, const void *buf, int size);
-/*{
-    int ret;
-    __asm__ __volatile__
-    (
-        "int $0x80\n"
-        : "=a" (ret)
-        : "0"(__NR_write_64), "b"(fd), "c"(buf), "d"(size)
-        : "cc", "memory"
-    );
-    return ret;
-}*/
+	 __asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"movq %2,%%r9\n"
+	"movq %3,%%r10\n"
+	"movq %4,%%r11\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (ret)
+	: "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3)
+	: "r8", "r9", "r10", "r11"
+	);
 
-/*int getpid()
-{
-  int ret;
-  __asm__ __volatile__
-  (
-      "syscall"
-      : "=a" (ret)
-      : "0"(__NR_getpid_64)
-      : "cc", "rcx", "r11"
-  );
-  return ret;
+    return (int)ret;
 }
 
+
+int write(int fd, const void *buf, int size) {
+
+    uint64_t ret;
+    uint64_t syscall_num = (uint64_t)__NR_write_64;
+    uint64_t arg1 = (uint64_t)fd;
+    uint64_t arg2 = (uint64_t)buf;
+    uint64_t arg3 = (uint64_t)size;
+
+	__asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"movq %2,%%r9\n"
+	"movq %3,%%r10\n"
+	"movq %4,%%r11\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (ret)
+	: "g"(syscall_num), "g"(arg1), "g"(arg2), "g"(arg3)
+	: "r8", "r9", "r10", "r11"
+	);
+
+    return (int)ret;
+}
+
+
+
+int getpid()
+{
+
+	uint64_t syscall_num = (uint64_t)__NR_getpid_64;
+	 uint64_t pid = 0;
+	__asm__ __volatile__
+	(
+	"movq %1,%%r8\n"
+	"int $0x80\n"
+	"movq %%rax,%0\n"
+	: "=r" (pid)
+	: "g"(syscall_num)
+    : 
+	);  
+  return (int) pid;
+}
+
+void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
+{
+   uint64_t syscall_num = (uint64_t)__NR_mmap_64;
+   uint64_t arg1 = 0;
+   uint64_t arg2 = (uint64_t) length;
+   uint64_t arg3 = (uint64_t) prot;
+   uint64_t arg4 = (uint64_t) flags;
+   uint64_t arg5 = (uint64_t) fd;
+   uint64_t arg6 = (uint64_t) offset;
+  
+   uint64_t ret_val = 0;
+  
+      __asm__ __volatile__
+      (
+      "movq %1,%%r8\n"
+      "movq %2,%%r9\n"
+      "movq %3,%%r10\n"
+      "movq %4,%%r11\n"
+      "movq %5,%%r12\n"
+      "movq %6,%%r13\n"
+      "movq %7,%%r14\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=r" (ret_val)
+      : "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3), "g"(arg4), "g"(arg5), "g"(arg6)
+      : "r8", "r9", "r10", "r11"
+      );
+
+   return (void *)ret_val;
+}
+ 
+int munmap(void *addr, int length)
+{
+ uint64_t syscall_num = (uint64_t)__NR_munmap_64;
+  
+        uint64_t arg1 = (uint64_t) addr;
+        uint64_t arg2 = (uint64_t) length;
+        
+        uint64_t ret_val = 0;
+   
+       __asm__ __volatile__
+        (
+        "movq %1,%%r8\n"
+        "movq %2,%%r9\n"
+        "int $0x80\n"
+        "movq %%rax,%0\n"
+        : "=r" (ret_val)
+        : "g"(syscall_num) , "g"(arg1), "g"(arg2)
+        : "r8", "r9" 
+        );
+
+ return (int)ret_val;
+}
+
+
+/*
 int open(const char *path, int permissions)
 {
     int fd;

@@ -7,15 +7,10 @@ char terminal_buffer[4096];
 uint64_t buffer_length = 0;
 
 volatile bool is_flushed = false;
-
-
-struct terminal_operation_pntrs terminal_operations = {
-    terminal_read,
-    terminal_write
-};
-
+extern void enable_Interrupts();
 
 int64_t terminal_read(int fd, void * buf, uint64_t count) {
+    enable_Interrupts();
     is_flushed = false;
     memset(terminal_buffer, '\0', 4095);
     memset(buf, '\0', count);
@@ -34,10 +29,19 @@ int64_t terminal_read(int fd, void * buf, uint64_t count) {
 
 
 int64_t terminal_write(int fd, void * buf, uint64_t count) {
+    if (count == 0) {
+        return 0;
+    }
     ((char *) (buf))[count] = '\0';
-    kprintf("%s", buf);
+    kprintf("\n%s", buf);
     return count;
 }
+
+struct terminal_operation_pntrs terminal_operations = {
+    &terminal_read,
+    &terminal_write
+};
+
 
 void terminal_enqueue(char ch) {
     if ((int)(ch) == 0) {
