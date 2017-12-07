@@ -69,8 +69,8 @@ void d4() {
 int main(int argc, char *argv[], char *envp[]) {
     
 	
-    //char buf2[1024];
-    /*char ch[10];
+    char buf2[1024];
+    char ch[10];
     ch[0] = 's';
     ch[1] = 'b';
     ch[2] = 'u';
@@ -82,24 +82,15 @@ int main(int argc, char *argv[], char *envp[]) {
     ch[8] = '\0';
 
     for(int i = 0; i< 1024; ++i) {
-        buf[i] = '\0';
+       // buf[i] = '\0';
         buf2[i] = '\0';
-    }*/
+    }
 
-    //while(1) {
-      //write(1, &ch, 8);
-      //read(0, buf, 1024);
-      //read(0, buf2, 1024);
-      //char c = 48 + ret;
-      //write(1, &ch, 1);
-      /*write(1,ch, 8);
-      write(1,ch, 8);
-      write(1,ch, 8);
-      write(1,ch, 8);
-      write(1,ch, 8);
-      write(1, &buf, ret);*/
-      //getpid();
-    //}
+    while(1) {
+      write(1, &ch, 8);
+      uint64_t ret = read(0, buf2, 1024);
+      write(1, buf2, ret);
+    }
 
 
     mmap((uint64_t *)0xFFF, 0x10, 0x20, 0x30, 0x40, 0x50);

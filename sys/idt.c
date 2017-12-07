@@ -184,8 +184,8 @@ void helper_syscall_handler() {
     uint64_t retval = 0;
     uint64_t syscallNum = reg->rax;
 
-    kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
-            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+    /*kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
+            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);*/
 
     /*kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
             reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15);*/
@@ -213,10 +213,10 @@ void helper_syscall_handler() {
             kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }
     reg->rax = retval;
-    kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
+    /*kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
             reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
 
-    /*kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
+    kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
             reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15);*/
     
     reg = NULL;

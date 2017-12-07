@@ -643,10 +643,10 @@ void init_start() {
 	}
 	clrscreen();
 	kprintf("\n writting fresh from here\n");
-	test_chdir();
+	//test_chdir();
     //test_terminal();
 	//test_file_descriptor_table();
-	//LaunchSbush();
+	LaunchSbush();
     while(1) {
         schedule();
     }

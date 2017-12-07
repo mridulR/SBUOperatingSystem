@@ -16,9 +16,9 @@ int read(int fd, void *buf, int size) {
 	"movq %4,%%rdx\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
-	: "=r" (ret)
+	: "=g" (ret)
 	: "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3)
-    : "rax", "memory"
+    : "rax", "rbx", "rcx", "rdx"
 	);
 
     return (int)ret;
@@ -43,8 +43,8 @@ int write(int fd, const void *buf, int size) {
 	"movq %4,%%rdx\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
-	: "=r" (ret)
-	: "r"(syscall_num), "r"(arg1), "r"(arg2), "r"(arg3)
+	: "=g" (ret)
+	: "g"(syscall_num), "g"(arg1), "g"(arg2), "g"(arg3)
     : "rax", "rbx", "rcx", "rdx"
 	);
 

@@ -91,6 +91,9 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     map_process_address_space(UB, 1);
     memset((uint64_t *)(UB), 0, PAGE_SIZE);
     
+    map_process_address_space(UB+PS, 1);
+    memset((uint64_t *)(UB+PS), 0, PAGE_SIZE);
+
     elf_task->user_rsp   = UB + PS;
     elf_task->mode = USER;
 
