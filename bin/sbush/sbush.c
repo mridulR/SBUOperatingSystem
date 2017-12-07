@@ -2,6 +2,70 @@
 #include <stdlib.h>
 #include <sys/syscall.h>
 
+void dummy() {                                                                                                                      
+    int a = 40;                                                                    
+    int b = 80;                                                                    
+    uint64_t ret = 0;                                                              
+    __asm__ __volatile__                                                        
+    (                                                                              
+        "movq %1,%%rax\n"                                                          
+        "movq %2,%%rbx\n"                                                          
+        "int $0x80\n"                                                              
+        "movq %%rax,%0\n"                                                          
+        :"=r"(ret)                                                                 
+        :"r"((uint64_t)a), "r"((uint64_t)b)                                        
+        : "cc"                                                                     
+    );                                                                             
+    return;                                                                        
+}                                                                                  
+                                                                                   
+void d2() {                                                                        
+    int a = 40;                                                                    
+    int b = 80;                                                                    
+    __asm__ __volatile__                                                           
+    (                                                                              
+        "movq %0,%%rax\n"                                                          
+        "movq %1,%%rbx\n"                                                          
+        "int $0x80\n"                                                              
+        :                                                                          
+        :"g"((uint64_t)a), "g"((uint64_t)b)                                        
+        : "cc"                                                                     
+    );                                                                             
+                                                                                   
+}
+
+void d3() {                                                                     
+    int a = 40;                                                                 
+    int b = 80;                                                                 
+    //uint64_t ret = 0;                                                         
+    __asm__ __volatile__                                                        
+    (                                                                           
+        "movq %0,%%rax\n"                                                       
+        "movq %1,%%rbx\n"                                                       
+        "int $0x80\n"                                                           
+        :                                                                       
+        :"g"((uint64_t)a), "g"((uint64_t)b)                                     
+        : "cc"                                                                  
+    );                                                                          
+    return;                                                                     
+}                                                                               
+                                                                                
+void d4() {                                                                     
+    int a = 40;                                                                 
+    int b = 80;                                                                 
+    __asm__ __volatile__                                                        
+    (                                                                           
+        "movq %0,%%rax\n"                                                       
+        "movq %1,%%rbx\n"                                                       
+        "int $0x80\n"                                                           
+        :                                                                       
+        :"g"((uint64_t)a), "g"((uint64_t)b)                                     
+        : "cc"                                                                  
+    );                                                                          
+                                                                                
+} 
+
+
 int main(int argc, char *argv[], char *envp[]) {
     
 	/*
@@ -30,10 +94,12 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	mmap(0, 0, 0, 0, 0, 0);
 
-	*/
     munmap(0, 0);	
 
+	*/
      
+    dummy(); 
+    d2();
     while(1)  { }
     return 0;
 }

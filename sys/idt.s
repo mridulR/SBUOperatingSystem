@@ -57,6 +57,7 @@ syscall_handler:
   push %r13
   push %r14
   push %r15
+  movq %rsp,%rdi
   call helper_syscall_handler 
   pop %r15
   pop %r14
@@ -73,7 +74,6 @@ syscall_handler:
   pop %rcx
   pop %rbx
   pop %rax
-  movq $5,%r15
   iretq
 
 .global helper_page_fault_handler 

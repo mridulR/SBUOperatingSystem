@@ -25,6 +25,26 @@
 #define INTERRUPT_GATE_TYPE_ATTR 0x8E
 #define SYSCALL_GATE_TYPE_ATTR   0xEE
 
+struct reg_info {
+    uint64_t r15;                                                                  
+    uint64_t r14;                                                                  
+    uint64_t r13;                                                                  
+    uint64_t r12;                                                                  
+    uint64_t r11;                                                                  
+    uint64_t r10;                                                                  
+    uint64_t r9;                                                                   
+    uint64_t r8;                                                                   
+    uint64_t rbp;                                                                  
+    uint64_t rdi;                                                                  
+    uint64_t rsi;                                                                  
+    uint64_t rdx;                                                                  
+    uint64_t rcx;                                                                  
+    uint64_t rbx;                                                                  
+    uint64_t rax;                                                                  
+};
+
+struct reg_info* reg; 
+
 // Initilizing the IDT structure
 static Idtr __attribute__((used)) s_Idtr = {0};
 
@@ -124,6 +144,32 @@ uint64_t handle_get_pid_sys_call() {
 void syscall_handler();
 
 void helper_syscall_handler() {
+
+    uint64_t addr;
+    __asm__ __volatile__ 
+    (
+        "movq %%rdi,%0\n"
+        :"=r"(addr)
+        :
+    );
+    
+
+    reg = (struct reg_info *)addr;
+    kprintf(" Invoked syscall handler !!! rax = %d rbx= %d rcx= %d rdx = %d rsi= %d rdi= %d ", 
+            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+                                                                                
+    uint64_t res = 99;
+    reg->rax = res;
+
+    kprintf(" Return from syscall handler !!! rax = %d rbx= %d rcx= %d rdx = %d rsi= %d rdi= %d ", 
+            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+     
+    //while(1) {}                                                               
+    return;                                                                     
+}
+
+
+/*void helper_syscall_handler() {
     uint64_t retval = 0;
     uint64_t syscallNum = 0;
     uint64_t arg1 = 0;
@@ -178,7 +224,7 @@ void helper_syscall_handler() {
     );
     //kprintf(" RETVAL : %d ", retval);
     return;
-}
+}*/
 
 // Initializes IDT and IDTR
 void init_Idt() {
