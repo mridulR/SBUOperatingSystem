@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/syscall.h>
-
+#include "syscall.h"
 
 void dummy() {                                                                                                                      
     int a = 40;                                                                    
@@ -70,11 +69,8 @@ void d4() {
 int main(int argc, char *argv[], char *envp[]) {
     
 	
-    //char buf[1024];
-    uint64_t arg1 = 0;
-    //uint64_t arg2 = (uint64_t)&buf;
-    //uint64_t arg3 = 1024;
-    char ch[10];
+    //char buf2[1024];
+    /*char ch[10];
     ch[0] = 's';
     ch[1] = 'b';
     ch[2] = 'u';
@@ -85,13 +81,13 @@ int main(int argc, char *argv[], char *envp[]) {
     ch[7] = ' ';
     ch[8] = '\0';
 
-    /*for(int i = 0; i< 1024; ++i) {
+    for(int i = 0; i< 1024; ++i) {
         buf[i] = '\0';
         buf2[i] = '\0';
     }*/
 
     //while(1) {
-      write(1, &ch, 8);
+      //write(1, &ch, 8);
       //read(0, buf, 1024);
       //read(0, buf2, 1024);
       //char c = 48 + ret;
@@ -105,32 +101,14 @@ int main(int argc, char *argv[], char *envp[]) {
       //getpid();
     //}
 
-/*
-    mmap(0, 0, 0, 0, 0, 0);
 
-    munmap(0, 0);    
-*/
+    mmap((uint64_t *)0xFFF, 0x10, 0x20, 0x30, 0x40, 0x50);
 
+    munmap((uint64_t *)0xFF, 0x60);    
      
     //dummy(); 
     //d2();
     
-    //while(1) {
-	  write(arg1,(void *)&ch, 7);
-	  //read(arg1, (void *)arg2, arg3);
-	  write(arg1, (void *)&ch, 7);
-	  write(arg1, (void *)&ch, 7);
-	  write(arg1, (void *)&ch, 7);
-	  //getpid();
-    //}
-
-/*
-	mmap(0, 0, 0, 0, 0, 0);
-
-	
-    munmap(0, 0);	
-
-*/     
     while(1)  { }
     return 0;
 }

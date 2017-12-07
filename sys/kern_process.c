@@ -613,8 +613,8 @@ void init_start() {
 	clrscreen();
 	kprintf("\n writting fresh from here\n");
     //test_terminal();
-	test_file_descriptor_table();
-	//LaunchSbush();
+	//test_file_descriptor_table();
+	LaunchSbush();
     while(1) {
         schedule();
     }

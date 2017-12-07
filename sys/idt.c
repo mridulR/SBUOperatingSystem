@@ -184,11 +184,11 @@ void helper_syscall_handler() {
     uint64_t retval = 0;
     uint64_t syscallNum = reg->rax;
 
-    /*kprintf(" Invoked syscall handler !!! rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p ", 
+    kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
             reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
 
-    kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
-            reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15); */
+    /*kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
+            reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15);*/
                                                                                                                    
     switch(syscallNum) {
         case __NR_read_64 :
@@ -203,15 +203,22 @@ void helper_syscall_handler() {
 			retval = handle_get_pid_sys_call();
 			break;
 		case __NR_mmap_64 :
-			kprintf("\n Mmap was called\n");
+            retval = 0x99;
+			kprintf("Mmap was called\n");
 			break;
 		case __NR_munmap_64 :
-			kprintf("\n Munmap was called\n");
+			kprintf("Munmap was called\n");
 			break;	
         default:
-            kprintf("\nSyascall no %p is not implemented, \n", syscallNum);
+            kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }
     reg->rax = retval;
+    kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
+            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+
+    /*kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
+            reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15);*/
+    
     reg = NULL;
     return;
 }
