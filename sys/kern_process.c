@@ -14,6 +14,7 @@
 #include <sys/page_table.h>
 #include <sys/vma.h>
 #include <sys/terminal.h>
+#include <sys/dirent_s.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -21,6 +22,11 @@ extern uint64_t KB;
 extern uint64_t PS;
 extern int64_t terminal_read(int fd, void * buf, uint64_t count);
 extern int64_t terminal_write(int fd, void * buf, uint64_t count);
+
+extern struct dir_info * find_dir(uint64_t des);
+extern bool add_dir(int curr_child_index, struct v_file_node * v_node);
+extern bool delete_dir(uint64_t des);
+extern void print_dir();
 
 Process_queue s_process_queue[2048];
 
@@ -169,7 +175,8 @@ task_struct* create_task(uint64_t ppid) {
     // Terminal Operations
     task->term_oprs.terminal_read  = &terminal_read;         
     task->term_oprs.terminal_write = &terminal_write;         
-
+	// File Descriptor Table  ----  Since terminal are mapped separately set it to NUll initially
+    task->file_root = NULL;
     return task;
 }
 
@@ -381,6 +388,114 @@ void test_vma_operations() {
      test_vma_operations_on_bigger_list();
 }
 
+
+void test_print_dir_empty_list() {
+	print_dir();
+}
+
+void test_dir_find_node_from_empty_list() {
+	struct dir_info *node = find_dir(30);
+    if (node == NULL) {
+		kprintf("\nPASS : Node search from empty list is NULL");
+	} else {
+		kprintf("\nFAIL : Node search from empty list is not NULL");
+	}
+}
+
+
+void test_dir_add_node_to_empty_list() {
+	if(add_dir(1, NULL)) {
+		struct dir_info * node = find_dir(0); // This is first open file 
+		if (node == NULL) {
+			kprintf("\nFAIL : searching node after adding to empty list failed");
+		} else {
+			if(delete_dir(0)) {
+				node = find_dir(0);
+				if (node == NULL) {
+					kprintf("\nPASS : EmptyList -> Add -> find -> delete -> find");
+				} else {
+					kprintf("\nFAIL : Deleting node after adding to empty vma list unsuccessful");
+				}
+			} else {
+				kprintf("\nFAIL : Deleting node after adding to empty vma list failed");
+			}
+		}
+	} else {
+		kprintf("\nFAIL : Adding node to empty list failed");
+	}
+}
+
+void test_dir_operations_on_bigger_list() {
+     add_dir(1, NULL); // start = 1
+     add_dir(2, NULL); // start = 2
+     add_dir(3, NULL); // start = 3
+     add_dir(4, NULL); // start = 4
+     add_dir(5, NULL); // start = 5
+     add_dir(5, NULL); // start = 6
+     add_dir(4, NULL); // start = 7
+     add_dir(3, NULL); // start = 8
+ 
+     print_dir();
+     struct dir_info * node = find_dir(5);
+     if (node != NULL) {
+         kprintf("\nPASS : Search middle element from list");
+     } else {
+         kprintf("\nFAIL : Search middle element from list");
+     }
+ 
+     node = find_dir(1);
+     if (node != NULL) {
+         kprintf("\nPASS : Search last element from list");
+     } else {
+         kprintf("\nFAIL : Search last element from list");
+     }
+ 
+     node = find_dir(8);
+     if (node != NULL) {
+         kprintf("\nPASS : Search first element from list");
+     } else {
+         kprintf("\nFAIL : Search first element from list");
+     }
+ 
+     delete_dir(5);
+     node = find_dir(5);
+     if (node != NULL) {
+         kprintf("\nFAIL : Search middle element from list after delete");
+     } else {
+         kprintf("\nPASS : Search middle element from list after delete");
+     }
+ 
+     delete_dir(1);
+     node = find_dir(1);
+     if (node != NULL) {
+         kprintf("\nFAIL : Search last element from list after delete");
+     } else {
+         kprintf("\nPASS : Search last element from list after delete");
+     }
+ 
+     delete_dir(8);
+     node = find_dir(8);
+     if (node != NULL) {
+         kprintf("\nFAIL : Search first element from list after delete");
+     } else {
+         kprintf("\nPASS : Search first element from list after delete");
+     }
+ 
+     print_dir();
+ }
+
+
+
+
+void test_file_descriptor_table() {
+	kprintf("\n Testing File descriptor table list\n");
+	s_cur_run_task = s_init_process;
+	test_print_dir_empty_list();
+	test_dir_find_node_from_empty_list();
+	test_dir_add_node_to_empty_list();
+	test_dir_operations_on_bigger_list();
+}
+
 void test_terminal() {
     kprintf("\n Testing terminal \n");
     uint64_t addr = KB + kmalloc(PAGE_SIZE);
@@ -436,7 +551,8 @@ void init_start() {
 	clrscreen();
 	kprintf("\n writting fresh from here\n");
     //test_terminal();
-	LaunchSbush();
+	test_file_descriptor_table();
+	//LaunchSbush();
     while(1) {
         schedule();
     }

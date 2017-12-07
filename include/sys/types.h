@@ -42,4 +42,8 @@ extern int fileno(FILE*);
 typedef uint32_t __uid_t;
 typedef uint32_t __uid_t;
 
+typedef struct dir_info dir_info;
+
+typedef struct v_file_node v_file_node;
+
 #endif

@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/vma.h>
 #include <sys/terminal.h>
+#include <sys/vfs.h>
+#include <sys/dirent_s.h>
 
 typedef enum State {
     INIT,
@@ -39,7 +41,8 @@ struct task_struct {
     uint64_t heap_top;
     //Terminal operations
     struct terminal_operation_pntrs term_oprs;
-    char * terminal_buffer;
+	// FILE Descriptor Table
+	struct dir_info *file_root;
     
 }__attribute__((packed));
 
