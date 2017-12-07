@@ -1,3 +1,4 @@
+#include <sys/commons.h>
 #include <sys/kern_process.h>
 #include <sys/kmalloc.h>
 #include <sys/kprintf.h>
@@ -27,6 +28,15 @@ extern struct dir_info * find_dir(uint64_t des);
 extern bool add_dir(int curr_child_index, struct v_file_node * v_node);
 extern bool delete_dir(uint64_t des);
 extern void print_dir();
+extern struct dir_info * opendir(char *name);
+extern struct dirent *readdir(struct dir_info *dirp);
+extern int closedir(struct dir_info *dirp);
+
+extern v_file_node* root_node;
+extern v_file_node* tarfs_mount_node; 
+extern v_file_node* get_root_node();
+extern v_file_node* search_file(char* dir_path, v_file_node * start_node);
+extern void print_node_inorder(v_file_node* root);
 
 Process_queue s_process_queue[2048];
 
@@ -484,8 +494,54 @@ void test_dir_operations_on_bigger_list() {
      print_dir();
  }
 
+void test_open_dir_for_non_existing_directory() {
+	struct dir_info * dirinfo = opendir("rootfs/bin/non_exiting_folder");
+	if (dirinfo == NULL) {
+		kprintf("\n PASS : opendir for non existing directory");
+	} else {
+		kprintf("\n FAIL : opendir for non existing directory");
+	}
+}
 
+void test_open_dir_for_existing_directory() {
+	struct dir_info * dirinfo = opendir("rootfs/lib");
+	if (dirinfo != NULL) {
+		kprintf("\n PASS : opendir for existing directory");
+	} else {
+		kprintf("\n FAIL : opendir for existing directory");
+	}
+}
 
+ void test_close_dir_for_non_existing_directory() {
+	if (closedir(NULL) == -1) {
+	      kprintf("\n PASS : closedir for non existing directory");
+	    } else {
+	        kprintf("\n FAIL : closedir for non existing directory");
+	    }
+	}
+	
+ void test_close_dir_for_existing_directory() {
+	struct dir_info * dirinfo = opendir("rootfs/lib");
+	if (closedir(dirinfo) == 0) {
+	    kprintf("\n PASS : closedir for existing directory");
+	} else {
+	    kprintf("\n FAIL : closedir for existing directory");
+	}
+}
+
+void test_read_dir_for_existing_directory() {
+	struct dir_info * dirinfo = opendir("rootfs/lib");
+	struct dirent * child = readdir(dirinfo);
+	kprintf("\n First child name - %s", child->d_name);
+	child = readdir(dirinfo);
+	kprintf("\n Second child name - %s", child->d_name);
+	child = readdir(dirinfo);
+	if (child == NULL) {
+		kprintf("\n PASS : readdir");
+	} else {
+		kprintf("\n FAIL : readdir");
+	}
+}
 
 void test_file_descriptor_table() {
 	kprintf("\n Testing File descriptor table list\n");
@@ -494,6 +550,12 @@ void test_file_descriptor_table() {
 	test_dir_find_node_from_empty_list();
 	test_dir_add_node_to_empty_list();
 	test_dir_operations_on_bigger_list();
+	//print_node_inorder(root_node);
+	test_open_dir_for_non_existing_directory();
+	test_open_dir_for_existing_directory();
+	test_close_dir_for_non_existing_directory();
+	test_close_dir_for_existing_directory();
+	test_read_dir_for_existing_directory();
 }
 
 void test_terminal() {

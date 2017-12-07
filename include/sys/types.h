@@ -46,4 +46,6 @@ typedef struct dir_info dir_info;
 
 typedef struct v_file_node v_file_node;
 
+typedef struct dirent dirent;
+
 #endif

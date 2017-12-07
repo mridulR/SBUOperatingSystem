@@ -32,13 +32,6 @@ struct v_file_node {
 };
 
 
-struct file_descriptor {
-	v_file_node* v_node;
-	uint64_t des_no;
-};
-
-typedef struct file_descriptor file_descriptor;
-
 typedef enum File_Type {
 	DIRECTORY_,
 	FILE_

@@ -57,6 +57,4 @@ typedef struct process_queue Process_queue;
 
 task_struct* create_task(uint64_t parent_pid);
 
-void test_terminal();
-
 #endif
