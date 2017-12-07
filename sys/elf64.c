@@ -36,7 +36,6 @@ void my_switch_to_ring3(task_struct *elf_task) {
         :
         :"r" (elf_task->entry_addr)
     );
-
 }
 
 
@@ -58,7 +57,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     
     //uint64_t entry_addr = (uint64_t)elf_header->e_entry;
     kprintf("\n Entry of main is - %p \n", (uint64_t)elf_header->e_entry);
-    uint64_t entry_addr = 0x00000000004000b0;
+    uint64_t entry_addr = 0x00000000004001a4;
 
     elf_task->entry_addr = entry_addr;
 

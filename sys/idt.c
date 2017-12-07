@@ -143,7 +143,7 @@ uint64_t handle_get_pid_sys_call() {
 
 void syscall_handler();
 
-void helper_syscall_handler() {
+/*void helper_syscall_handler() {
 
     uint64_t addr;
     __asm__ __volatile__ 
@@ -166,41 +166,38 @@ void helper_syscall_handler() {
      
     //while(1) {}                                                               
     return;                                                                     
-}
+}*/
 
 
-/*void helper_syscall_handler() {
-    uint64_t retval = 0;
-    uint64_t syscallNum = 0;
-    uint64_t arg1 = 0;
-    uint64_t arg2 = 0;
-    uint64_t arg3 = 0;
-    uint64_t arg4 = 0;
-    uint64_t arg5 = 0;
-    uint64_t arg6 = 0;
+void helper_syscall_handler() {
 
-    // Read all the arguments from regs. 
+    uint64_t addr;
     __asm__ __volatile__ 
-    (  "movq %%r8,%0\n"
-       "movq %%r9,%1\n"
-       "movq %%r10,%2\n"
-       "movq %%r11,%3\n"
-       "movq %%r12,%4\n"
-       "movq %%r13,%5\n"
-       "movq %%r14,%6\n"    
-       :"=r"(syscallNum), "=r"(arg1), "=r"(arg2), "=r"(arg3), "=r"(arg4), "=r"(arg5), "=r"(arg6)
-       :
-       :"r15"
+    (
+        "movq %%rdi,%0\n"
+        :"=r"(addr)
+        :
     );
 
+    reg = (struct reg_info *)addr;
+
+    uint64_t retval = 0;
+    uint64_t syscallNum = reg->rax;
+
+    /*kprintf(" Invoked syscall handler !!! rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p ", 
+            reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+
+    kprintf("r8 = %p r9= %p r10= %p r11= %p r12= %p r13= %p r14= %p r15=%p \n", 
+            reg->r8, reg->r9, reg->r10, reg->r11, reg->r12, reg->r13, reg->r14, reg->r15); */
+                                                                                                                   
     switch(syscallNum) {
         case __NR_read_64 :
             //kprintf("\nRead sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
-            retval = handle_read_sys_call(arg1, arg2, arg3);
+            retval = handle_read_sys_call(reg->rbx, reg->rcx, reg->rdx);
             break;
         case __NR_write_64 :
             //kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
-            retval = handle_write_sys_call(arg1, arg2, arg3);
+            retval = handle_write_sys_call(reg->rbx, reg->rcx, reg->rdx);
             break;
 		case __NR_getpid_64 :
 			retval = handle_get_pid_sys_call();
@@ -214,17 +211,10 @@ void helper_syscall_handler() {
         default:
             kprintf("\nSyascall no %p is not implemented, \n", syscallNum);
     }
-    // Update the result in rax reg.
-    __asm__ __volatile__
-    (
-      "movq %0,%%r15\n"
-      :
-      :"r"(retval)
-      :
-    );
-    //kprintf(" RETVAL : %d ", retval);
+    reg->rax = retval;
+    reg = NULL;
     return;
-}*/
+}
 
 // Initializes IDT and IDTR
 void init_Idt() {

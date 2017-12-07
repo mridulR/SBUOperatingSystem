@@ -36,7 +36,6 @@
 #define __NR_brk_64 12 
 #define __NR_lseek_64 8
 
-
 int read(int fd, void *buf, int size) {
 
     uint64_t ret = 0;
@@ -47,15 +46,15 @@ int read(int fd, void *buf, int size) {
 
 	 __asm__ __volatile__
 	(
-	"movq %1,%%r8\n"
-	"movq %2,%%r9\n"
-	"movq %3,%%r10\n"
-	"movq %4,%%r11\n"
+	"movq %1,%%rax\n"
+	"movq %2,%%rbx\n"
+	"movq %3,%%rcx\n"
+	"movq %4,%%rdx\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
 	: "=r" (ret)
 	: "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3)
-	: "r8", "r9", "r10", "r11"
+    : "rax", "memory"
 	);
 
     return (int)ret;
@@ -67,25 +66,26 @@ int write(int fd, const void *buf, int size) {
     uint64_t ret;
     uint64_t syscall_num = (uint64_t)__NR_write_64;
     uint64_t arg1 = (uint64_t)fd;
-    uint64_t arg2 = (uint64_t)buf;
+    uint64_t addr = (uint64_t )buf;
+    uint64_t arg2 = addr;
+    //uint64_t arg2 = (uint64_t)0xf0000fee;
     uint64_t arg3 = (uint64_t)size;
 
 	__asm__ __volatile__
 	(
-	"movq %1,%%r8\n"
-	"movq %2,%%r9\n"
-	"movq %3,%%r10\n"
-	"movq %4,%%r11\n"
+	"movq %1,%%rax\n"
+	"movq %2,%%rbx\n"
+	"movq %3,%%rcx\n"
+	"movq %4,%%rdx\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
 	: "=r" (ret)
 	: "g"(syscall_num), "g"(arg1), "g"(arg2), "g"(arg3)
-	: "r8", "r9", "r10", "r11"
+    : "rax", "memory"
 	);
 
     return (int)ret;
 }
-
 
 
 int getpid()
@@ -95,12 +95,12 @@ int getpid()
 	 uint64_t pid = 0;
 	__asm__ __volatile__
 	(
-	"movq %1,%%r8\n"
+	"movq %1,%%rax\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
 	: "=r" (pid)
 	: "g"(syscall_num)
-    : 
+    : "cc"
 	);  
   return (int) pid;
 }
@@ -119,18 +119,18 @@ void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
   
       __asm__ __volatile__
       (
-      "movq %1,%%r8\n"
-      "movq %2,%%r9\n"
-      "movq %3,%%r10\n"
-      "movq %4,%%r11\n"
-      "movq %5,%%r12\n"
-      "movq %6,%%r13\n"
-      "movq %7,%%r14\n"
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "movq %3,%%rcx\n"
+      "movq %4,%%rdx\n"
+      "movq %5,%%r8\n"
+      "movq %6,%%r9\n"
+      "movq %7,%%r10\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
       : "=r" (ret_val)
       : "g"(syscall_num) , "g"(arg1), "g"(arg2), "g"(arg3), "g"(arg4), "g"(arg5), "g"(arg6)
-      : "r8", "r9", "r10", "r11"
+      : "cc"
       );
 
    return (void *)ret_val;
@@ -147,13 +147,13 @@ int munmap(void *addr, int length)
    
        __asm__ __volatile__
         (
-        "movq %1,%%r8\n"
-        "movq %2,%%r9\n"
+        "movq %1,%%rax\n"
+        "movq %2,%%rbx\n"
         "int $0x80\n"
         "movq %%rax,%0\n"
         : "=r" (ret_val)
         : "g"(syscall_num) , "g"(arg1), "g"(arg2)
-        : "r8", "r9" 
+        : "cc"
         );
 
  return (int)ret_val;
