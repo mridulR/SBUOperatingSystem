@@ -43,6 +43,8 @@ struct task_struct {
     struct terminal_operation_pntrs term_oprs;
 	// FILE Descriptor Table
 	struct dir_info *file_root;
+	// Current Workind Directory
+	char cwd[256];
     
 }__attribute__((packed));
 

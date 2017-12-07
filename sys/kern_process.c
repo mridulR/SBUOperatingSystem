@@ -16,6 +16,7 @@
 #include <sys/vma.h>
 #include <sys/terminal.h>
 #include <sys/dirent_s.h>
+#include <sys/chdir.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -35,8 +36,11 @@ extern int closedir(struct dir_info *dirp);
 extern v_file_node* root_node;
 extern v_file_node* tarfs_mount_node; 
 extern v_file_node* get_root_node();
-extern v_file_node* search_file(char* dir_path, v_file_node * start_node);
+extern v_file_node* search_file(const char* dir_path, v_file_node * start_node);
 extern void print_node_inorder(v_file_node* root);
+
+extern int chdir(const char *path);
+extern char *getcwd(char *buf, int size);
 
 Process_queue s_process_queue[2048];
 
@@ -187,6 +191,8 @@ task_struct* create_task(uint64_t ppid) {
     task->term_oprs.terminal_write = &terminal_write;         
 	// File Descriptor Table  ----  Since terminal are mapped separately set it to NUll initially
     task->file_root = NULL;
+	// Current working directory should be first set to 'rootfs/bin'
+	memcpy(&(task->cwd),"rootfs/bin", 10);
     return task;
 }
 
@@ -558,6 +564,31 @@ void test_file_descriptor_table() {
 	test_read_dir_for_existing_directory();
 }
 
+void test_chdir() {
+	kprintf("\n Testing chdir");
+	print_node_inorder(root_node);
+	s_cur_run_task = s_init_process;
+	char result[256];
+	getcwd(result, 256);
+	kprintf("\n Current working directory is : %s", result);
+	chdir("..");
+	getcwd(result, 256);
+	kprintf("\n Current working directory is : %s", result);
+	
+	chdir("rootfs/lib");
+	getcwd(result, 256);
+	kprintf("\n Current working directory is : %s", result);
+
+	chdir("..");
+	getcwd(result, 256);
+	kprintf("\n Current working directory is : %s", result);
+	
+	chdir("rootfs/lib/libc.a");
+	getcwd(result, 256);
+	kprintf("\n Current working directory is : %s", result);
+
+}
+
 void test_terminal() {
     kprintf("\n Testing terminal \n");
     uint64_t addr = KB + kmalloc(PAGE_SIZE);
@@ -612,9 +643,10 @@ void init_start() {
 	}
 	clrscreen();
 	kprintf("\n writting fresh from here\n");
+	test_chdir();
     //test_terminal();
 	//test_file_descriptor_table();
-	LaunchSbush();
+	//LaunchSbush();
     while(1) {
         schedule();
     }

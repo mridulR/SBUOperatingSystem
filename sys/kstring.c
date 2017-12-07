@@ -1,6 +1,25 @@
 #include<sys/kstring.h>
 #include<sys/kprintf.h>
 
+
+void k_concat(char * str1, char * str2) {
+ if (str1 == NULL || str2 == NULL) {
+	return;
+  }
+  int i = 0;
+  int j = 0;
+  for (; str1[i] != '\0'; ++i) {
+
+  }
+ 
+  for (; str2[j] != '\0'; ++j) {
+	str1[i + j] = str2[j];
+  }
+
+  str1[i + j] = '\0';
+}
+
+
 int kstrcmp(const char *s1, const char *s2) {
     if (*s1 != *s2) {
         return (*(const unsigned char *)s1 - *(const unsigned char *)s2);
@@ -19,13 +38,11 @@ int kstrcmp(const char *s1, const char *s2) {
 	return -1;   
 }
 
-int kstrlen(char * str) {
-	int len = 0;
-    char *ptr = str;
-	while (*ptr++ != '\0') {
-		len++;
-    }
-	return len;
+int kstrlen(const char * str) {
+	if (str == NULL || *str == '\0') {
+		return 0;
+	}
+	return (*str) ? kstrlen(++str) + 1 : 0;
 }
 
 

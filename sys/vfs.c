@@ -229,7 +229,7 @@ void* init_tarfs() {
 }
 
 
-v_file_node* search_file(char* dir_path, v_file_node * start_node) {
+v_file_node* search_file(const char* dir_path, v_file_node * start_node) {
     if (start_node == NULL) {
         return NULL;
     }
