@@ -428,7 +428,13 @@ void init_start() {
     init_process_queue();
     init_tarfs();
     print_node_inorder(root_node);
-
+    int count = 0;
+	while(count < 40) {
+		kprintf("\n");
+		count = count + 1;
+	}
+	clrscreen();
+	kprintf("\n writting fresh from here\n");
     //test_terminal();
 	LaunchSbush();
     while(1) {
