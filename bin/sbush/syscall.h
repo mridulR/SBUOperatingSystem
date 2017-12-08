@@ -13,7 +13,12 @@
 #define TIOCGPGRP   0x540F
 #define TIOCSPGRP   0x5410
 
+
+#define __NR_opendir_64 250
+#define __NR_readdir_64 251
+#define __NR_closedir_64 252
 #define __NR_clrscr_64 255
+
 #define __NR_read_64 0
 #define __NR_write_64 1
 #define __NR_getpid_64 39

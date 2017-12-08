@@ -441,10 +441,60 @@ off_t lseek(int fd, off_t offset, int whence)
 
 
 dir_info * opendir(char *name) {
-    return NULL;
+	uint64_t syscall_num =  __NR_opendir_64;
+	uint64_t arg1 = (uint64_t) name; 
+    uint64_t ret_val;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
+  );
+
+  return (dir_info *)ret_val;
 }
 
-struct dirent *readdir(dir_info *dirp) { return NULL;}
-int closedir(dir_info *dirp) { return 0; }
+struct dirent *readdir(dir_info *dirp) { 
+    uint64_t syscall_num = __NR_readdir_64;
+    uint64_t arg1 = (uint64_t) dirp;
+    uint64_t ret_val;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
+  );  
+
+  return (dirent *)ret_val;
+}
+
+int closedir(dir_info *dirp) { 
+    uint64_t syscall_num = __NR_closedir_64;
+    uint64_t arg1 = (uint64_t) dirp;
+    uint64_t ret_val;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
+  );  
+
+  return (int)ret_val;
+}
 
 

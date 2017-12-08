@@ -17,6 +17,7 @@ typedef uint8_t bool;
 extern task_struct* s_init_process;
 extern task_struct* s_cur_run_task;
 
+uint64_t MAP_UB = 0x00000000FF000000;
 uint64_t UB = 0x00000000F0000000;
 extern uint64_t PS;
 extern uint64_t PAGE_SIZE;

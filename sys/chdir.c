@@ -17,7 +17,7 @@
   extern v_file_node* tarfs_mount_node;
 
   // We support only absolute path i.e path from rootfs/......
-  int chdir(const char *path) {
+  int sys_chdir(const char *path) {
 	if (s_cur_run_task == NULL) {
          kprintf("\nKernel Panic : No current running process");
          return -1;

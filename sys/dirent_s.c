@@ -8,13 +8,16 @@
 #include <sys/memset.h>
 #include <sys/memcpy.h>
 #include <sys/kstring.h>
+#include <sys/page_table.h>
+
 
 #define PAGE_SIZE  4096
- 
+extern uint64_t MAP_UB; 
 extern task_struct* s_cur_run_task;
 extern uint64_t KB;
 extern v_file_node* tarfs_mount_node;
-
+extern void map_process_address_space();
+extern void page_fault_handler();
 uint64_t curr_available_file_des_num = 3;
 
 
@@ -61,7 +64,8 @@ uint64_t curr_available_file_des_num = 3;
 
 
 dir_info * build_dir_node(uint64_t file_desc, int curr_child_index, v_file_node * v_node) {
-      uint64_t addr = KB + kmalloc(sizeof(dir_info));
+      uint64_t addr =(uint64_t) (KB + kmalloc(PAGE_SIZE));
+      //page_fault_handler(addr);
       dir_info * curr = (struct dir_info *)addr;
       memset((uint8_t *)curr, '\0', PAGE_SIZE);
       curr->des = file_desc;
@@ -137,7 +141,7 @@ bool delete_dir(uint64_t file_des) {
  }
 
 
-dir_info * opendir(char *name) {
+dir_info * sys_opendir(char *name) {
 	if (name != NULL) {
 		dir_info * temp = find_dir_by_name(name);
 		if (temp != NULL) {
@@ -161,7 +165,7 @@ dir_info * opendir(char *name) {
 }
 
 
-int closedir(dir_info *dirp) {
+int sys_closedir(dir_info *dirp) {
 	if (dirp == NULL) {
 		kprintf("\n Input passed is NULL");
 		return -1;
@@ -175,7 +179,7 @@ int closedir(dir_info *dirp) {
 	return 0;
 }
 
-struct dirent *readdir(dir_info *dirp) {
+struct dirent * sys_readdir(dir_info *dirp) {
 	if (dirp == NULL) {
 		kprintf("\n Input passed is NULL");
 	    return NULL;
@@ -198,6 +202,7 @@ struct dirent *readdir(dir_info *dirp) {
 	dirent * curr = (dirent *)addr;
 	memset((uint8_t *)curr, '\0', PAGE_SIZE);
 	memcpy(curr->d_name, child->v_name, kstrlen(child->v_name));
+	kprintf("\n%s", curr->d_name);   // printing name.
 	return curr;
 }
 

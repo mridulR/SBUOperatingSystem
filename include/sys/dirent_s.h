@@ -3,7 +3,11 @@
 
 #include<sys/commons.h>
 
-dir_info * opendir(char *name);
+dir_info * sys_opendir(char *name);
+
+struct dirent * sys_readdir(dir_info *dirp);
+
+int closedir(dir_info *dirp);
 
 dir_info * find_dir(uint64_t des);
 
@@ -13,11 +17,7 @@ bool delete_dir(uint64_t des);
 
 void print_dir();
 
-struct dirent *readdir(dir_info *dirp);
-
-int closedir(dir_info *dirp);
-
-struct dirent *readdir(dir_info *dirp);
+struct dirent * sys_readdir(dir_info *dirp);
 
 int sys_open(const char *path, const char *mode);
 

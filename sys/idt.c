@@ -17,6 +17,11 @@
 #define __NR_open_64 2 
 #define __NR_close_64 3
 #define __NR_clrscr_64 255
+#define __NR_opendir_64 250
+#define __NR_readdir_64 251
+#define __NR_closedir_64 252
+#define __NR_chdir_64 80
+
 
 
 
@@ -87,6 +92,10 @@ extern int sys_close(int fd);
 extern int sys_read(int fd, void *buf, int count);
 extern char * sys_getcwd(char *buf, int size);
 extern void sys_clrscreen();
+extern dir_info * sys_opendir(char *name);
+extern struct dirent * sys_readdir(dir_info *dirp);
+extern int sys_closedir(dir_info *dirp);
+extern int sys_chdir(const char *path);
 
 
 void general_permission_fault() {
@@ -241,7 +250,19 @@ void helper_syscall_handler() {
 			sys_clrscreen();
 			retval = 1;
 			break;
-			
+		case __NR_opendir_64 :
+			retval = (uint64_t)sys_opendir((char *)reg->rbx);
+			break;
+		case  __NR_readdir_64 :
+			retval = (uint64_t)sys_readdir((dir_info *)reg->rbx);
+			break;
+		case __NR_closedir_64 :
+			retval = sys_closedir((dir_info *) reg->rbx);
+			break;
+		case __NR_chdir_64 :
+			retval = sys_chdir((const char *) reg->rbx);
+			break;
+
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }

@@ -29,9 +29,9 @@ extern struct dir_info * find_dir(uint64_t des);
 extern bool add_dir(int curr_child_index, struct v_file_node * v_node);
 extern bool delete_dir(uint64_t des);
 extern void print_dir();
-extern struct dir_info * opendir(char *name);
-extern struct dirent *readdir(struct dir_info *dirp);
-extern int closedir(struct dir_info *dirp);
+extern struct dir_info * sys_opendir(char *name);
+extern struct dirent *sys_readdir(struct dir_info *dirp);
+extern int sys_closedir(struct dir_info *dirp);
 extern int sys_open(const char *pathname, int flags);
 extern int sys_close(int fd);
 extern int sys_read(int fd, void *buf, int count);
@@ -42,7 +42,7 @@ extern v_file_node* get_root_node();
 extern v_file_node* search_file(const char* dir_path, v_file_node * start_node);
 extern void print_node_inorder(v_file_node* root);
 
-extern int chdir(const char *path);
+extern int sys_chdir(const char *path);
 extern char *sys_getcwd(char *buf, int size);
 
 Process_queue s_process_queue[2048];
@@ -504,7 +504,7 @@ void test_dir_operations_on_bigger_list() {
  }
 
 void test_open_dir_for_non_existing_directory() {
-	struct dir_info * dirinfo = opendir("rootfs/bin/non_exiting_folder");
+	struct dir_info * dirinfo = sys_opendir("rootfs/bin/non_exiting_folder");
 	if (dirinfo == NULL) {
 		kprintf("\n PASS : opendir for non existing directory");
 	} else {
@@ -513,7 +513,7 @@ void test_open_dir_for_non_existing_directory() {
 }
 
 void test_open_dir_for_existing_directory() {
-	struct dir_info * dirinfo = opendir("rootfs/lib");
+	struct dir_info * dirinfo = sys_opendir("rootfs/lib");
 	if (dirinfo != NULL) {
 		kprintf("\n PASS : opendir for existing directory");
 	} else {
@@ -522,33 +522,33 @@ void test_open_dir_for_existing_directory() {
 }
 
  void test_close_dir_for_non_existing_directory() {
-	if (closedir(NULL) == -1) {
-	      kprintf("\n PASS : closedir for non existing directory");
+	if (sys_closedir(NULL) == -1) {
+	      kprintf("\n PASS : sys_closedir for non existing directory");
 	    } else {
-	        kprintf("\n FAIL : closedir for non existing directory");
+	        kprintf("\n FAIL : sys_closedir for non existing directory");
 	    }
 	}
 	
  void test_close_dir_for_existing_directory() {
-	struct dir_info * dirinfo = opendir("rootfs/lib");
-	if (closedir(dirinfo) == 0) {
-	    kprintf("\n PASS : closedir for existing directory");
+	struct dir_info * dirinfo = sys_opendir("rootfs/lib");
+	if (sys_closedir(dirinfo) == 0) {
+	    kprintf("\n PASS : sys_closedir for existing directory");
 	} else {
-	    kprintf("\n FAIL : closedir for existing directory");
+	    kprintf("\n FAIL : sys_closedir for existing directory");
 	}
 }
 
 void test_read_dir_for_existing_directory() {
-	struct dir_info * dirinfo = opendir("rootfs/lib");
-	struct dirent * child = readdir(dirinfo);
+	struct dir_info * dirinfo = sys_opendir("rootfs/lib");
+	struct dirent * child = sys_readdir(dirinfo);
 	kprintf("\n First child name - %s", child->d_name);
-	child = readdir(dirinfo);
+	child = sys_readdir(dirinfo);
 	kprintf("\n Second child name - %s", child->d_name);
-	child = readdir(dirinfo);
+	child = sys_readdir(dirinfo);
 	if (child == NULL) {
-		kprintf("\n PASS : readdir");
+		kprintf("\n PASS : sys_readdir");
 	} else {
-		kprintf("\n FAIL : readdir");
+		kprintf("\n FAIL : sys_readdir");
 	}
 }
 
@@ -574,19 +574,19 @@ void test_chdir() {
 	char result[256];
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
-	chdir("..");
+	sys_chdir("..");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 	
-	chdir("rootfs/lib");
+	sys_chdir("rootfs/lib");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 
-	chdir("..");
+	sys_chdir("..");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 	
-	chdir("rootfs/lib/libc.a");
+	sys_chdir("rootfs/lib/libc.a");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 

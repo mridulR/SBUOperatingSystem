@@ -18,19 +18,25 @@ void execute_cat(char * arg) {
 }
 
 void execute_ls(char * arg) {
+    if (arg == NULL || *arg == '\0') {
+		char buf[40];
+		memset(buf, '\0', 40);
+		getcwd(buf, 40);
+		memcpy(arg, buf, strlen(buf));
+	}
 	dir_info* dir = opendir(arg);
 	if (dir != NULL) {
 		struct dirent *dir_entry =  readdir(dir);
 		while (dir_entry != NULL) {
-			printf("\n%s", dir_entry->d_name);			
+			//printf("\n%s", dir_entry->d_name);
+			dir_entry =  readdir(dir);	
 		}
 		closedir(dir);
 	}
 }
 
 void execute_cd(char * arg) {
-	puts("\n in cd \n");
-	puts(arg);
+	chdir(arg);
 }
 
 void execute_pwd() {
@@ -88,8 +94,6 @@ int parse_command(char * buff, char * arg) {
 		&& buff[3] == 's' && buff[4] == 'c' && buff[5] == 'r') {
 		return 5;
 	}
-
-
 
 	return -1;
 }

@@ -22,6 +22,16 @@ uint64_t create_pml4_table(){
     return s_pml4_table;
 }
 
+uint64_t readCR3() {
+    uint64_t addr = 0;
+    __asm__ __volatile__
+    (  "movq %%cr3, %0\n"
+       : "=r"(addr)
+       :
+    );
+    return addr;
+}
+
 uint64_t create_pdpt_table(uint64_t pml4Table, uint64_t index, uint8_t user){
     uint64_t pdpt_table  = allocate_phys_page();
     uint64_t entry = pdpt_table;
@@ -347,3 +357,4 @@ uint64_t readCR2() {
     );
     return addr;
 }
+
