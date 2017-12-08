@@ -50,6 +50,7 @@ vma * build_vma_node(uint64_t heap_top, uint64_t size_of_memory_allocated) {
     memset((uint8_t *)curr, '\0', PAGE_SIZE);
     curr->start_addr = heap_top;
     curr->end_addr = heap_top + size_of_memory_allocated;
+    curr->vma_type = HEAP;
     curr->next = NULL;
     curr->prev = NULL;
     return curr;    
@@ -57,23 +58,54 @@ vma * build_vma_node(uint64_t heap_top, uint64_t size_of_memory_allocated) {
 
 
 // After adding vma -> caller should set vma_type by calling find with start address
-bool add_vma(uint64_t size_of_memory_allocated) {
+uint64_t add_vma(uint64_t size_of_memory_allocated) {
+    uint64_t ret = 0xFFFFFFFFFFFFFFFF;
     if (s_cur_run_task == NULL) {
         kprintf("\nKernel Panic : No current running process");
-        return false;
+        return 0;
     }
     
     vma * trav = (vma *)s_cur_run_task->vma_root;
     vma * curr = build_vma_node(s_cur_run_task->heap_top, size_of_memory_allocated);
+    ret = (ret & curr->start_addr);
     s_cur_run_task->heap_top = curr->end_addr;
     curr->next = trav;
     s_cur_run_task->vma_root = curr;
     if (trav != NULL) {
         trav->prev = curr;
     }
-    return true;
+    return ret;
 }
 
+// After adding vma -> caller should set vma_type by calling find with start address
+bool create_add_vma(uint64_t start_addr, uint64_t end_addr, Vma_Type type) {
+    if (s_cur_run_task == NULL) {
+        kprintf("\nKernel Panic : No current running process");
+        return false;
+    }
+    if ( type == HEAP) {
+        kprintf("Wrong Invocation to map HEAP\n");
+        return false;
+    }
+    vma * trav = (vma *)s_cur_run_task->vma_root;
+
+    uint64_t addr = KB + kmalloc(sizeof(vma));
+    vma * curr = (vma *)addr;
+    memset((uint8_t *)curr, '\0', PAGE_SIZE);
+    curr->start_addr = start_addr;
+    curr->end_addr = end_addr;
+    curr->vma_type = type;
+    curr->next = NULL;
+    curr->prev = NULL;
+
+    curr->next = trav;
+    s_cur_run_task->vma_root = curr;
+    if (trav != NULL) {
+        trav->prev = curr;
+    }
+
+    return true;
+}
 
 bool delete_vma(uint64_t start_addr) {
     vma * vma_entry = find_vma(start_addr);

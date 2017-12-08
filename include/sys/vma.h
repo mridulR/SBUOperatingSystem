@@ -25,7 +25,8 @@ struct vma {
 }__attribute__((packed));
 
 vma * find_vma(uint64_t start_addr);
-bool add_vma(uint64_t size_of_memory_allocated);
+uint64_t add_vma(uint64_t size_of_memory_allocated);
+bool create_add_vma(uint64_t start_addr, uint64_t end_addr, Vma_Type type);
 bool delete_vma(uint64_t start_addr);
 void print_vma();
 

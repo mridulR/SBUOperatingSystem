@@ -7,23 +7,7 @@
 #include <sys/kern_process.h>
 #include <sys/chdir.h>
 #include <sys/dirent_s.h>
-
-#define __NR_read_64 0
-#define __NR_write_64 1
-#define __NR_getpid_64 39
-#define __NR_mmap_64 9 
-#define __NR_munmap_64 11
-#define __NR_getcwd_64 79
-#define __NR_open_64 2 
-#define __NR_close_64 3
-#define __NR_clrscr_64 255
-#define __NR_opendir_64 250
-#define __NR_readdir_64 251
-#define __NR_closedir_64 252
-#define __NR_chdir_64 80
-
-
-
+#include <sys/syscall.h>
 
 /* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
                        changed. Also system calls can be executed in userspace (ring 3, see this) 
@@ -165,7 +149,11 @@ uint64_t handle_get_pid_sys_call() {
 
 void syscall_handler();
 
-/*void helper_syscall_handler() {
+/*
+
+// PROTOYPE SYSCALL CODE: FOR REFERENCE PURPOSE
+
+void helper_syscall_handler() {
 
     uint64_t addr;
     __asm__ __volatile__ 
@@ -224,18 +212,18 @@ void helper_syscall_handler() {
             }
             break;
         case __NR_write_64 :
-            //kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
+            //kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d ", arg1, arg2, arg3, arg4, arg5, arg6);
             retval = handle_write_sys_call(reg->rbx, reg->rcx, reg->rdx);
             break;
 		case __NR_getpid_64 :
 			retval = handle_get_pid_sys_call();
 			break;
 		case __NR_mmap_64 :
-            retval = 0x99;
-			kprintf("Mmap was called\n");
+			//kprintf("Mmap was called\n");
+            retval = add_vma(reg->rbx);
 			break;
 		case __NR_munmap_64 :
-			kprintf("Munmap was called\n");
+			//kprintf("Munmap was called\n");
 			break;
 		case __NR_getcwd_64 :
 			retval = (uint64_t)sys_getcwd((char *)reg->rbx, reg->rcx);
@@ -299,7 +287,6 @@ void init_Idt() {
   set_interrupt_service_routine(13, INTERRUPT_GATE_TYPE_ATTR, helper_general_permission_fault_handler);
   set_interrupt_service_routine(14, INTERRUPT_GATE_TYPE_ATTR, helper_page_fault_handler);
 
-  set_interrupt_service_routine(127, SYSCALL_GATE_TYPE_ATTR, syscall_handler);
   set_interrupt_service_routine(128, SYSCALL_GATE_TYPE_ATTR, syscall_handler);
 
   //s_Idtd[127].type = 0xEE;

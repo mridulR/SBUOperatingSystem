@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <sys/syscall.h>
 
 int clrscr() {
 
@@ -93,8 +93,6 @@ void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
 {
    uint64_t syscall_num = (uint64_t)__NR_mmap_64;
    uint64_t arg2 = (uint64_t) length;
-   uint64_t arg3 = (uint64_t) prot;
-   uint64_t arg4 = (uint64_t) flags;
   
    uint64_t ret_val = 0;
   
@@ -102,13 +100,11 @@ void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
       (
       "movq %1,%%rax\n"
       "movq %2,%%rbx\n"
-      "movq %3,%%rcx\n"
-      "movq %4,%%rdx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
       : "=g" (ret_val)
-      : "g"(syscall_num) , "g"(arg2), "g"(arg3), "g"(arg4)
-      : "rax", "rbx", "rcx", "rdx"
+      : "g"(syscall_num) , "g"(arg2)
+      : "rax", "rbx"
       );
 
    return (void *)ret_val;

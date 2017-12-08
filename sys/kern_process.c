@@ -313,7 +313,7 @@ void test_vma_find_node_from_empty_vma_list() {
      }
 }
 
-void test_vma_add_node_to_empty_vma_list() {
+/*void test_vma_add_node_to_empty_vma_list() {
     if(add_vma(12345)) {
         vma * node = find_vma(0); // This is heap top now
         if (node == NULL) {
@@ -337,9 +337,9 @@ void test_vma_add_node_to_empty_vma_list() {
     } else {
         kprintf("\nFAIL : Adding node to empty VMA list failed");
     }
-}
+}*/
 
-void test_vma_operations_on_bigger_list() {
+/*void test_vma_operations_on_bigger_list() {
     s_cur_run_task->heap_top = 0; // Initializing vma again
     add_vma(1); // start = 0, end = 1
     add_vma(2); // start = 1, end = 3
@@ -405,7 +405,7 @@ void test_vma_operations() {
      test_vma_find_node_from_empty_vma_list();
      test_vma_add_node_to_empty_vma_list();
      test_vma_operations_on_bigger_list();
-}
+}*/
 
 
 void test_print_dir_empty_list() {
@@ -650,11 +650,11 @@ void init_start() {
     init_process_queue();
     init_tarfs();
     print_node_inorder(root_node);
-    int count = 0;
+    /*int count = 0;
 	while(count < 40) {
 		kprintf("\n");
 		count = count + 1;
-	}
+	}*/
 	//sys_clrscreen();
 	//kprintf("\n writting fresh from here\n");
 	//test_chdir();

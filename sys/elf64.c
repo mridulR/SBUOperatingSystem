@@ -1,12 +1,13 @@
-#include<sys/vfs.h>
-#include<sys/kprintf.h>
-#include<sys/elf64.h>
-#include<sys/types.h>
-#include<sys/memcpy.h>
-#include<sys/memset.h>
-#include<sys/kern_process.h>
-#include<sys/page_table.h>
-#include<sys/gdt.h>
+#include <sys/vfs.h>
+#include <sys/kprintf.h>
+#include <sys/elf64.h>
+#include <sys/types.h>
+#include <sys/memcpy.h>
+#include <sys/memset.h>
+#include <sys/kern_process.h>
+#include <sys/page_table.h>
+#include <sys/gdt.h>
+#include <sys/vma.h>
 
 #define true 1
 #define false 0
@@ -62,6 +63,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
 
     elf_task->entry_addr = entry_addr;
 
+    uint64_t heap_top = 0;
     for (int i = 0; i < elf_header->e_phnum; ++i) {
         // Identify code and data segment
         if ((int)prgm_header->p_type == 1) {
@@ -72,14 +74,25 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
             kprintf("\n start - %p and end - %p size %d ", start_va, end_va, size);
             kprintf("\n PGM Hdr - %p ",  (elf_header + prgm_header->p_offset));
 
+            if(heap_top < (uint64_t)end_va) {
+                if(end_va % PS == 0) {
+                  heap_top = end_va;
+                }
+                else {
+                    uint64_t offset = end_va % PS;
+                    heap_top = end_va + PS - offset;
+                }
+            }
             if ((int)prgm_header->p_flags == 5)  {
                 // This is TEXT segment
                 // kprintf("\nGot Text segment");
+                create_add_vma((uint64_t)(0xFFFFFFFFFFFFFFFF & start_va), (uint64_t)(0xFFFFFFFFFFFFFFFF & end_va), TEXT);
                 map_process_address_space(start_va, size);
             } 
             else if ((int)prgm_header->p_flags == 6) { 
                 // This is Data segment
                 // kprintf("\nGot Data segment");
+                create_add_vma((uint64_t)(0xFFFFFFFFFFFFFFFF & start_va), (uint64_t)(0xFFFFFFFFFFFFFFFF & end_va), DATA);
                 map_process_address_space(start_va, size);
             } 
             else {
@@ -88,7 +101,9 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
         }
         prgm_header += 1;
     }
-    
+
+    elf_task->heap_top =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
+    kprintf(" Heap TOP %p ", elf_task->heap_top);
     map_process_address_space(UB, 1);
     memset((uint64_t *)(UB), 0, PAGE_SIZE);
     
