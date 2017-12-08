@@ -55,9 +55,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     // Load CR3
     set_cr3_register(elf_task->pml4);
     
-    //uint64_t entry_addr = (uint64_t)elf_header->e_entry;
-    kprintf("\n Entry of main is - %p \n", (uint64_t)elf_header->e_entry);
-    uint64_t entry_addr = 0x00000000004002dd;
+    uint64_t entry_addr =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)elf_header->e_entry);
 
     elf_task->entry_addr = entry_addr;
 

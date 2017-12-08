@@ -32,7 +32,6 @@ int write(int fd, const void *buf, int size) {
     uint64_t arg1 = (uint64_t)fd;
     uint64_t addr = (uint64_t )buf;
     uint64_t arg2 = addr;
-    //uint64_t arg2 = (uint64_t)0xf0000fee;
     uint64_t arg3 = (uint64_t)size;
 
 	__asm__ __volatile__
@@ -62,7 +61,7 @@ int getpid()
 	"movq %1,%%rax\n"
 	"int $0x80\n"
 	"movq %%rax,%0\n"
-	: "=r" (pid)
+	: "=g" (pid)
 	: "g"(syscall_num)
     : "rax"
 	);  
@@ -87,8 +86,8 @@ void *mmap(void *addr, int length, int prot, int flags, int fd, int offset)
       "movq %4,%%rdx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num) , "r"(arg2), "r"(arg3), "r"(arg4)
+      : "=g" (ret_val)
+      : "g"(syscall_num) , "g"(arg2), "g"(arg3), "g"(arg4)
       : "rax", "rbx", "rcx", "rdx"
       );
 
@@ -110,8 +109,8 @@ int munmap(void *addr, int length)
       "movq %3,%%rcx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num) , "r"(arg1), "r"(arg2)
+      : "=g" (ret_val)
+      : "g"(syscall_num) , "g"(arg1), "g"(arg2)
       : "rax", "rbx", "rcx", "rdx"
     );
 
@@ -135,8 +134,8 @@ int open(const char *path, int permissions)
         "movq %3,%%rcx\n"
         "int $0x80\n"
         "movq %%rax,%0\n"
-        : "=r" (ret_val)
-        : "r"(syscall_num) , "r"(arg1), "r"(arg2)
+        : "=g" (ret_val)
+        : "g"(syscall_num) , "g"(arg1), "g"(arg2)
         : "rax", "rbx", "rcx"
     );
 
@@ -156,8 +155,8 @@ int close(int fd)
         "movq %2,%%rbx\n"
         "int $0x80\n"
         "movq %%rax,%0\n"
-        : "=r" (ret_val)
-        : "r"(syscall_num) , "r"(arg1)
+        : "=g" (ret_val)
+        : "g"(syscall_num) , "g"(arg1)
         : "rax", "rbx", "rcx"
     );
     return (int)ret_val;
@@ -175,8 +174,8 @@ void exit(int status)
         "movq %2,%%rbx\n"
         "int $0x80\n"
         "movq %%rax,%0\n"
-        : "=r" (ret_val)
-        : "r"(syscall_num), "r"(arg1)
+        : "=g" (ret_val)
+        : "g"(syscall_num), "g"(arg1)
         : "rax"
     );
 }
@@ -195,8 +194,8 @@ int pipe(int pipefd[2])
       "movq %3,%%rcx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r"(arg1), "r"(arg2)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g"(arg1), "g"(arg2)
       : "rax", "rbx", "rcx"
   );
   return (int)ret_val;
@@ -216,8 +215,8 @@ int dup2(int oldfd, int newfd)
       "movq %3,%%rcx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r"(arg1), "r"(arg2)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g"(arg1), "g"(arg2)
       : "rax", "rbx", "rcx"
   );
   return (int)ret_val;
@@ -233,8 +232,8 @@ int fork()
       "movq %1,%%rax\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num)
+      : "=g" (ret_val)
+      : "g"(syscall_num)
       : "rax"
   );
   return (int)ret_val;
@@ -257,8 +256,8 @@ int execve(const char *path, char *const argv[], char *const envp[])
       "movq %4,%%rdx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1), "r" (arg2), "r"(arg3)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g" (arg2), "g"(arg3)
       : "rax", "rbx", "rcx", "rdx"
   );
   return (int)ret_val;
@@ -281,8 +280,8 @@ int waitpid(int pid, int *status, int options)
       "movq %4,%%rdx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1), "r" (arg2), "r"(arg3)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g" (arg2), "g"(arg3)
       : "rax", "rbx", "rcx", "rdx"
   );
   return (int)ret_val;
@@ -301,8 +300,8 @@ int chdir(const char*path)
       "movq %2,%%rbx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
       : "rax", "rbx"
   );
   return (int)ret_val;
@@ -322,8 +321,8 @@ char *getcwd(char *buf, int size)
       "movq %3,%%rcx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1), "r" (arg2)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g" (arg2)
       : "rax", "rbx", "rcx"
   );
 
@@ -348,8 +347,8 @@ int setpgid(int pid, int pgid)
       "movq %3,%%rcx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1), "r" (arg2)
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g" (arg2)
       : "rax", "rbx", "rcx"
   );
 
@@ -368,9 +367,9 @@ int getpgid(int pid)
       "movq %2,%%rbx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1)
-      : "rax", "rbx", "rcx"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
   );
 
   return ret_val;
@@ -389,9 +388,9 @@ int getpgrp(int pid)
       "movq %2,%%rbx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1)
-      : "rax", "rbx", "rcx"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
   );
   
   return ret_val;
@@ -413,11 +412,9 @@ off_t lseek(int fd, off_t offset, int whence)
       "movq %4,%%rdx\n"
       "int $0x80\n"
       "movq %%rax,%0\n"
-      : "=r" (ret_val)
-      : "r"(syscall_num), "r" (arg1), "r"(arg2), "r" (arg3)
-      : "rax", "rbx", "rcx"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g"(arg2), "g" (arg3)
+      : "rax", "rbx", "rcx", "rdx"
   );
   return ret_val;
 }
-
-
