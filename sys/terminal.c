@@ -51,6 +51,11 @@ void terminal_enqueue(char ch) {
     if ((int)(ch) == 0) {
        return; // This is key release
     }
+	if (buffer_length == 0 && ch == '\b') {
+         // do nothing
+         return;
+     }
+
     if (buffer_length >= 4000) {
         kprintf("\n Terminal buffer full. Emptying buffer at this time. Retry with 4000 chars limit \n");
         memset(terminal_buffer, '\0', 4095);
@@ -58,7 +63,8 @@ void terminal_enqueue(char ch) {
         is_flushed = true;
         return;
     }
-    kprintf("%c", ch);
+    
+	kprintf("%c", ch);
     if (ch == '\b') {
         terminal_buffer[buffer_length] = '\0';
         buffer_length = buffer_length - 1;
@@ -68,10 +74,6 @@ void terminal_enqueue(char ch) {
     if (ch == '\n') {
         terminal_buffer[buffer_length] = '\0';
         is_flushed = true;
-        return;
-    }
-    if (buffer_length == 0 && ch == '\b') {
-        // do nothing
         return;
     }
     terminal_buffer[buffer_length] = ch;

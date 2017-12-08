@@ -26,7 +26,7 @@
 	if (path == NULL || kstrlen(path) == 0) {
 		kprintf("\n Setting current working directory to home - rootfs/");
 		memset((void *)s_cur_run_task->cwd, '\0', kstrlen((char *)s_cur_run_task->cwd));
-		memcpy((void *)s_cur_run_task->cwd,(char *)"rootfs/" ,kstrlen((char *)s_cur_run_task->cwd));
+		memcpy((void *)s_cur_run_task->cwd,(char *)"rootfs/" ,kstrlen("rootfs/"));
 		return 0;
 	}
 	
