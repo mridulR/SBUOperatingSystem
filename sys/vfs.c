@@ -217,13 +217,14 @@ void* init_tarfs() {
         
         if (file_size > 0) {
             uint64_t offset = (file_size / sizeof(posix_header_ustar));
-            if(file_size % sizeof(start) == 0) {
+            if(file_size % sizeof(posix_header_ustar) == 0) {
                 offset += 1;
             }
             start = start + offset + 1; // * sizeof(posix_header_ustar))+ 2;
         } else {
             start = start + 1;
         }
+		//start += (((file_size + 511) / 512) + 1 ) * 512;
     }     
     return (void *)root_node ;
 }
