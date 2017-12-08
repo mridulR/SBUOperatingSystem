@@ -661,7 +661,7 @@ void init_start() {
     //test_terminal();
 	//test_file_descriptor_table();
 	test_open_read_close();
-	//LaunchSbush();
+	LaunchSbush();
     while(1) {
         schedule();
     }
