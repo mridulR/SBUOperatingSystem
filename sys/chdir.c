@@ -75,7 +75,7 @@
   }
 
 
-  char *getcwd(char *buf, int size) {
+  char *sys_getcwd(char *buf, int size) {
 	if (s_cur_run_task == NULL) {
 		kprintf("\nKernel Panic : No current running process");
 		return NULL;

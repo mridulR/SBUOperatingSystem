@@ -16,6 +16,6 @@ void kprintf(const char *fmt, ...);
 void printTime(unsigned int time);
 void printKeypress(char keypress, char * address);
 
-void clrscreen();
+void sys_clrscreen();
 
 #endif

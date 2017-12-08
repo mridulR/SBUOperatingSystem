@@ -3,14 +3,16 @@
 
 #define NAME_MAX 255
 
-struct dirent {
+#include <sys/commons.h>
+
+/*struct dirent {
  char d_name[NAME_MAX+1];
-};
+};*/
 
-typedef struct DIR DIR;
+typedef struct dir_info dir_info;
 
-DIR *opendir(const char *name);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
+dir_info *opendir(const char *name);
+struct dirent *readdir(dir_info *dirp);
+int closedir(dir_info *dirp);
 
 #endif

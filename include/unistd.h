@@ -3,6 +3,9 @@
 
 #include <sys/types.h>
 
+// clear screen
+int clrscr();
+
 int open(const char *pathname, int flags);
 int close(int fd);
 int read(int fd, void *buf, int count);
@@ -31,10 +34,6 @@ int unlink(const char *pathname);
 int pipe(int pipefd[2]);
 
 void *sbrk(void* addr);
-
-FILE *fopen(const char *path, const char *mode);
-
-int fclose(FILE *f);
 
 char *getenv(const char *name);
 int setenv(const char *name, const char *value, int overwrite);

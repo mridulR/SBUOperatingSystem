@@ -5,12 +5,19 @@
 #include <sys/asm_util.h>
 #include <sys/page_table.h>
 #include <sys/kern_process.h>
+#include <sys/chdir.h>
+#include <sys/dirent_s.h>
 
 #define __NR_read_64 0
 #define __NR_write_64 1
 #define __NR_getpid_64 39
 #define __NR_mmap_64 9 
 #define __NR_munmap_64 11
+#define __NR_getcwd_64 79
+#define __NR_open_64 2 
+#define __NR_close_64 3
+#define __NR_clrscr_64 255
+
 
 
 /* RPL    BIT 0, 1     Requested Privilege Level. The CPU checks these bits before any selector is
@@ -75,6 +82,12 @@ extern task_struct * s_cur_run_task;
 extern void pit_interrupt_service_routine();
 extern void keyboard_interrupt_service_routine();
 extern void helper_general_permission_fault_handler();
+extern int sys_open(const char *path, const char *mode);
+extern int sys_close(int fd);
+extern int sys_read(int fd, void *buf, int count);
+extern char * sys_getcwd(char *buf, int size);
+extern void sys_clrscreen();
+
 
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
@@ -193,7 +206,13 @@ void helper_syscall_handler() {
     switch(syscallNum) {
         case __NR_read_64 :
             //kprintf("\nRead sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
-            retval = handle_read_sys_call(reg->rbx, reg->rcx, reg->rdx);
+			if (reg->rbx == 0) {
+				retval = handle_read_sys_call(reg->rbx, reg->rcx, reg->rdx);
+                break;
+			}
+            else {
+			    retval = sys_read(reg->rbx, (void *) reg->rcx, reg->rdx);
+            }
             break;
         case __NR_write_64 :
             //kprintf("\n Write sys call invoked -  %d   %p   %d %d %d %d \n", arg1, arg2, arg3, arg4, arg5, arg6);
@@ -208,7 +227,21 @@ void helper_syscall_handler() {
 			break;
 		case __NR_munmap_64 :
 			kprintf("Munmap was called\n");
-			break;	
+			break;
+		case __NR_getcwd_64 :
+			retval = (uint64_t)sys_getcwd((char *)reg->rbx, reg->rcx);
+			break;
+		case __NR_open_64 :
+			retval = sys_open((const char *)reg->rbx, (const char*)reg->rcx);
+			break;
+		case __NR_close_64 :
+			retval = sys_close(reg->rbx);
+			break;
+		case __NR_clrscr_64 :
+			sys_clrscreen();
+			retval = 1;
+			break;
+			
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }

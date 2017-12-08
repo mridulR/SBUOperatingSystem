@@ -11,6 +11,8 @@
 #define true 1
 #define false 0
 
+extern void sys_clrscreen();
+
 typedef uint8_t bool;
 extern task_struct* s_init_process;
 extern task_struct* s_cur_run_task;
@@ -142,7 +144,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
         prgm_header += 1;
     }
 
-	clrscreen();
+	sys_clrscreen();
 
     // Switch to ring3 
     my_switch_to_ring3(elf_task);

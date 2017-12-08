@@ -32,9 +32,9 @@ extern void print_dir();
 extern struct dir_info * opendir(char *name);
 extern struct dirent *readdir(struct dir_info *dirp);
 extern int closedir(struct dir_info *dirp);
-extern int open(const char *pathname, int flags);
-extern int close(int fd);
-extern int read(int fd, void *buf, int count);
+extern int sys_open(const char *pathname, int flags);
+extern int sys_close(int fd);
+extern int sys_read(int fd, void *buf, int count);
 
 extern v_file_node* root_node;
 extern v_file_node* tarfs_mount_node; 
@@ -43,7 +43,7 @@ extern v_file_node* search_file(const char* dir_path, v_file_node * start_node);
 extern void print_node_inorder(v_file_node* root);
 
 extern int chdir(const char *path);
-extern char *getcwd(char *buf, int size);
+extern char *sys_getcwd(char *buf, int size);
 
 Process_queue s_process_queue[2048];
 
@@ -572,22 +572,22 @@ void test_chdir() {
 	print_node_inorder(root_node);
 	s_cur_run_task = s_init_process;
 	char result[256];
-	getcwd(result, 256);
+	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 	chdir("..");
-	getcwd(result, 256);
+	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 	
 	chdir("rootfs/lib");
-	getcwd(result, 256);
+	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 
 	chdir("..");
-	getcwd(result, 256);
+	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 	
 	chdir("rootfs/lib/libc.a");
-	getcwd(result, 256);
+	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
 
 }
@@ -595,11 +595,11 @@ void test_chdir() {
 void test_open_read_close() {
 	s_cur_run_task = s_init_process;
 	print_node_inorder(root_node);
-	int fd = open("rootfs/etc/test_file.txt", 0);
+	int fd = sys_open("rootfs/etc/test_file.txt", 0);
 	char buff[240];
-	read(fd, buff, 240);
+	sys_read(fd, buff, 240);
 	kprintf("%s", buff);
-	close(fd);
+	sys_close(fd);
 }
 
 void test_terminal() {
@@ -628,7 +628,7 @@ void test_terminal() {
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
-	//clrscreen();
+	//sys_clrscreen();
     s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     if (s_sbush_process == NULL) {
@@ -655,7 +655,7 @@ void init_start() {
 		kprintf("\n");
 		count = count + 1;
 	}
-	//clrscreen();
+	//sys_clrscreen();
 	//kprintf("\n writting fresh from here\n");
 	//test_chdir();
     //test_terminal();

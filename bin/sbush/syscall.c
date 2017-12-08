@@ -1,5 +1,25 @@
 #include "syscall.h"
 
+int clrscr() {
+
+	uint64_t ret = 0;
+
+	uint64_t syscall_num = (uint64_t)__NR_clrscr_64;
+ 
+      __asm__ __volatile__
+      (
+      "movq %1,%%rax\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret)
+      : "g"(syscall_num)
+      : "rax"
+      );
+      
+      return (int)ret;
+
+}
+
 int read(int fd, void *buf, int size) {
 
     uint64_t ret = 0;
@@ -418,3 +438,13 @@ off_t lseek(int fd, off_t offset, int whence)
   );
   return ret_val;
 }
+
+
+dir_info * opendir(char *name) {
+    return NULL;
+}
+
+struct dirent *readdir(dir_info *dirp) { return NULL;}
+int closedir(dir_info *dirp) { return 0; }
+
+

@@ -258,7 +258,7 @@ void HandleUnsignedInt(unsigned int u_argVal, char* currAddr) {
   UpdateHeightWidth(currAddr);
 }
 
-void clrscreen() {
+void sys_clrscreen() {
 	char * baseAddr = (char *) VIDEO_BUFFER_BASE_ADDR;
 	char * endAddr =  getCurrentAddress();
 

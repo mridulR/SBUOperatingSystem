@@ -3,6 +3,6 @@
 
 
 int chdir(const char *path);
-char *getcwd(char *buf, int size);
+char * sys_getcwd(char *buf, int size);
 
 #endif

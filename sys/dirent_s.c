@@ -201,7 +201,7 @@ struct dirent *readdir(dir_info *dirp) {
 	return curr;
 }
 
-int open(const char *pathname, int flags) {
+int sys_open(const char *pathname, int flags) {
 	if (pathname != NULL) {
          dir_info * temp = find_dir_by_name(pathname);
          if (temp != NULL) {
@@ -225,7 +225,7 @@ int open(const char *pathname, int flags) {
 }
 
 
-int close(int fd) {
+int sys_close(int fd) {
 	if (fd < 3) {
          kprintf("\n Invalid file descriptor");
          return -1;
@@ -244,7 +244,7 @@ int close(int fd) {
      return 0;
 }
 
-int read(int fd, void *buf, int count) {
+int sys_read(int fd, void *buf, int count) {
 	if (fd < 3) {
 		kprintf("\n Invalid file descriptor");
 		return -1;
