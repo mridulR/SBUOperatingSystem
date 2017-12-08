@@ -163,18 +163,20 @@ int close(int fd)
     return (int)ret_val;
 }
 
-void exit()
+void exit(int status)
 {
     uint64_t syscall_num = (uint64_t)__NR_exit_64;
+    uint64_t arg1 = (uint64_t) status;
     uint64_t ret_val = 0;
 
     __asm__ __volatile__
     (
         "movq %1,%%rax\n"
+        "movq %2,%%rbx\n"
         "int $0x80\n"
         "movq %%rax,%0\n"
         : "=r" (ret_val)
-        : "r"(syscall_num) 
+        : "r"(syscall_num), "r"(arg1)
         : "rax"
     );
 }
