@@ -1,0 +1,27 @@
+Following are the commands supported from sbush :
+
+	1.) cd
+		It supports arguments as :
+		a.) No arguments :
+				Eg, cd
+				Explaination : It will set current working directory to root which is rootfs.
+		b.) . :
+				Eg, cd .
+				Explanation : It will change the current directory to itself, i.e 
+							  it has no effect on current working directory.
+		c.) .. :
+				Eg, cd ..
+				Explanation : It will set the current working directory to its parent. In case current
+						      working directory is rootfs, it doesn't has any effect.
+
+		d.) absolute path :
+				Eg, cd rootfs/lib
+				Explanation: Only absolute path from rootfs is supported. If the directory exists, 
+							 current working directory is set to absolute path provided.
+	2.) ls
+		It supports argument as :
+		a.) No arguments:
+				Eg, ls
+				Explanation : This lists all files and directories in current working directory.
+
+		b.)

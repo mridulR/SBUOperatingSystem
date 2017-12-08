@@ -1,4 +1,6 @@
-Hi my name is khan
-and I am not a terrorist
-
+Hi Everyone.
+This is a test file.
+You can run this file by typing
+cat rootfs/etc/testfile.txt from
+sbush.
 

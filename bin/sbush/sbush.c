@@ -99,6 +99,10 @@ int parse_command(char * buff, char * arg) {
 }
 
 int main(int argc, char *argv[], char *envp[]) {
+
+	printf("\n**************************************************************");
+	printf("\nLook at rootfs/etc/command.txt file for all supported commands\n");
+	printf("**************************************************************\n");
     
     char buf[100];
 	char arg[100];
