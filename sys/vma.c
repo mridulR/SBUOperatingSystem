@@ -9,6 +9,7 @@
 
 extern task_struct* s_cur_run_task;
 extern uint64_t KB;
+extern uint64_t HEAP_END;
 
 void print_vma() {
     vma * root = s_cur_run_task->vma_root;
@@ -44,6 +45,24 @@ vma * find_vma(uint64_t start_addr) {
     return NULL;
 }
 
+uint8_t check_vma_access(uint64_t addr) {
+    vma * trav = s_cur_run_task->vma_root;
+    if (trav == NULL) {
+        kprintf("\nVMA list empty");
+        return 0;
+    }
+    while (trav != NULL) {
+        if (trav->start_addr >= addr && trav->end_addr <= addr ) {
+            if(trav->vma_type == TEXT) {
+                return 0;
+            }
+            return 1;
+        }
+        trav = trav->next;
+    }
+    return 0;
+}
+
 vma * build_vma_node(uint64_t heap_top, uint64_t size_of_memory_allocated) {
     uint64_t addr = KB + kmalloc(sizeof(vma));
     vma * curr = (vma *)addr;
@@ -64,13 +83,40 @@ uint64_t add_vma(uint64_t size_of_memory_allocated) {
         kprintf("\nKernel Panic : No current running process");
         return 0;
     }
-    
+    uint64_t addr = find_first_free_vma(size_of_memory_allocated);
+    if(addr != 0) {
+        ret = (ret & addr);
+        return ret;
+    }
+    if( (s_cur_run_task->heap_top + size_of_memory_allocated) > HEAP_END) {
+        kprintf("\nKernel Panic : HEAP EXHAUSTED !!!");\
+        return 0;
+    }
     vma * trav = (vma *)s_cur_run_task->vma_root;
     vma * curr = build_vma_node(s_cur_run_task->heap_top, size_of_memory_allocated);
     ret = (ret & curr->start_addr);
     s_cur_run_task->heap_top = curr->end_addr;
+    if(trav == NULL) {
+        s_cur_run_task->vma_root = curr;
+        return ret;
+    }
+    vma * prev = trav;
+    while(trav != NULL) {
+        if(curr->end_addr < trav->start_addr) {
+            break;
+        }
+        prev = trav;
+        trav = trav->next;
+    }
+    if(prev == NULL) {
+        curr->next = s_cur_run_task->vma_root;
+        curr->prev = NULL;
+        s_cur_run_task->vma_root = curr;
+        return ret;
+    }
+    prev->next = curr;
     curr->next = trav;
-    s_cur_run_task->vma_root = curr;
+    curr->prev = prev;
     if (trav != NULL) {
         trav->prev = curr;
     }
@@ -135,4 +181,42 @@ bool delete_vma(uint64_t start_addr) {
     }
     kfree((uint64_t)vma_entry);
     return true;
+}
+
+vma* get_vma_node(uint64_t hs, uint64_t size) {
+    uint64_t addr = KB + kmalloc(sizeof(vma));
+    vma * curr = (vma *)addr;
+    memset((uint8_t *)curr, '\0', PAGE_SIZE);
+    curr->start_addr = hs;
+    curr->end_addr = hs + size;
+    curr->vma_type = HEAP;
+    curr->next = NULL;
+    curr->prev = NULL;
+    return curr;
+}
+
+uint64_t find_first_free_vma(uint64_t size) {
+    vma * trav  = s_cur_run_task->vma_root;
+    if (trav == NULL) {
+        kprintf("\nVMA list empty");
+        return 0;
+    }
+    uint64_t hs = s_cur_run_task->heap_start;
+    vma* node = NULL;
+    while( trav != NULL ) {
+        if((trav->start_addr - hs) > size) {
+            node = get_vma_node(hs, size);
+            break;
+        }
+        hs = trav->end_addr;
+        trav = trav->next;
+    }
+    if( node == NULL ) {
+        return 0;
+    }
+    
+    //s_cur_run_task->heap_top = curr->end_addr;
+    node->next = (vma *)s_cur_run_task->vma_root;
+    s_cur_run_task->vma_root = node;
+    return node->start_addr;
 }

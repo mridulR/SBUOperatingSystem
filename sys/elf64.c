@@ -18,8 +18,9 @@ typedef uint8_t bool;
 extern task_struct* s_init_process;
 extern task_struct* s_cur_run_task;
 
-uint64_t MAP_UB = 0x00000000FF000000;
-uint64_t UB = 0x00000000F0000000;
+uint64_t UB       = 0x0000000F00000000;
+uint64_t HEAP_END = 0x0000000EFFFF0000;
+
 extern uint64_t PS;
 extern uint64_t PAGE_SIZE;
 
@@ -102,7 +103,8 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
         prgm_header += 1;
     }
 
-    elf_task->heap_top =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
+    elf_task->heap_top   =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
+    elf_task->heap_start =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
     kprintf(" Heap TOP %p ", elf_task->heap_top);
     map_process_address_space(UB, 1);
     memset((uint64_t *)(UB), 0, PAGE_SIZE);

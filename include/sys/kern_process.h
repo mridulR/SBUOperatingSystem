@@ -39,6 +39,7 @@ struct task_struct {
     // For managing VMA
     struct vma* vma_root;
     uint64_t heap_top;
+    uint64_t heap_start;
     //Terminal operations
     struct terminal_operation_pntrs term_oprs;
 	// FILE Descriptor Table

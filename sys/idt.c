@@ -106,6 +106,18 @@ void general_page_fault() {
       :"=r"(error)
       :
     );
+    uint64_t addr = (uint64_t) (0xFFFFFFFFFFFFFFFF & ret);
+    if(s_cur_run_task == NULL) {
+        kprintf("\nCR2 Value: %p", ret);
+        kprintf("\nKERNEL PANIC: No process scheduled ");
+        while(1) { }
+    }
+    uint8_t isValid = check_vma_access(addr);
+    if(!isValid) {
+        kprintf("INVALID MEMORY ACCESS: SEGMENTATION FAULT !!! \n");
+        kprintf("\nCR2 Value: %p", ret);
+        while(1) { }
+    }
     kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
     kprintf("\nCR2 Value: %p", ret);
     page_fault_handler(ret);
@@ -224,6 +236,7 @@ void helper_syscall_handler() {
 			break;
 		case __NR_munmap_64 :
 			//kprintf("Munmap was called\n");
+            retval = delete_vma(reg->rbx);
 			break;
 		case __NR_getcwd_64 :
 			retval = (uint64_t)sys_getcwd((char *)reg->rbx, reg->rcx);

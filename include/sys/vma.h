@@ -29,5 +29,6 @@ uint64_t add_vma(uint64_t size_of_memory_allocated);
 bool create_add_vma(uint64_t start_addr, uint64_t end_addr, Vma_Type type);
 bool delete_vma(uint64_t start_addr);
 void print_vma();
-
+uint64_t find_first_free_vma(uint64_t size);
+uint8_t check_vma_access(uint64_t addr);
 #endif
