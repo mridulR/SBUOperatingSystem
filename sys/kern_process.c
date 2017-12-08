@@ -32,6 +32,9 @@ extern void print_dir();
 extern struct dir_info * opendir(char *name);
 extern struct dirent *readdir(struct dir_info *dirp);
 extern int closedir(struct dir_info *dirp);
+extern int open(const char *pathname, int flags);
+extern int close(int fd);
+extern int read(int fd, void *buf, int count);
 
 extern v_file_node* root_node;
 extern v_file_node* tarfs_mount_node; 
@@ -589,6 +592,16 @@ void test_chdir() {
 
 }
 
+void test_open_read_close() {
+	s_cur_run_task = s_init_process;
+	print_node_inorder(root_node);
+	int fd = open("rootfs/etc/test_file.txt", 0);
+	char buff[240];
+	read(fd, buff, 240);
+	kprintf("%s", buff);
+	close(fd);
+}
+
 void test_terminal() {
     kprintf("\n Testing terminal \n");
     uint64_t addr = KB + kmalloc(PAGE_SIZE);
@@ -646,7 +659,8 @@ void init_start() {
 	//test_chdir();
     //test_terminal();
 	//test_file_descriptor_table();
-	LaunchSbush();
+	test_open_read_close();
+	//LaunchSbush();
     while(1) {
         schedule();
     }

@@ -12,4 +12,9 @@ void print_dir();
 struct dirent *readdir(dir_info *dirp);
 int closedir(dir_info *dirp);
 
+
+int open(const char *pathname, int flags);
+int close(int fd);
+int read(int fd, void *buf, int count);
+
 #endif

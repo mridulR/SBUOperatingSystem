@@ -15,7 +15,7 @@ extern task_struct* s_cur_run_task;
 extern uint64_t KB;
 extern v_file_node* tarfs_mount_node;
 
-uint64_t curr_available_file_des_num = 0;
+uint64_t curr_available_file_des_num = 3;
 
 
  dir_info * find_dir(uint64_t des) {
@@ -37,7 +37,7 @@ uint64_t curr_available_file_des_num = 0;
       return NULL;
  }
 
- dir_info * find_dir_by_name(char * name) {
+ dir_info * find_dir_by_name(const char * name) {
 	if (s_cur_run_task == NULL) {
          kprintf("\nKernel Panic : No current running process");
           return NULL;
@@ -200,3 +200,72 @@ struct dirent *readdir(dir_info *dirp) {
 	memcpy(curr->d_name, child->v_name, kstrlen(child->v_name));
 	return curr;
 }
+
+int open(const char *pathname, int flags) {
+	if (pathname != NULL) {
+         dir_info * temp = find_dir_by_name(pathname);
+         if (temp != NULL) {
+             return temp->des;
+         }
+     }
+     v_file_node* search_node = search_file(pathname, tarfs_mount_node);
+     if (search_node == NULL) {
+         kprintf("\n No file exists with absolute path - %s", pathname);
+         return -1;
+     }
+     if (search_node->is_dir == 1) {
+         kprintf("\n Folder but not file exists with absolute path - %s", pathname);
+         return -1;
+     }
+     int current_child_index = search_node->no_of_child == 0 ? -1 : search_node->no_of_child - 1;
+     if (add_dir(current_child_index, search_node)) {
+         return curr_available_file_des_num - 1;
+     }
+	return -1;
+}
+
+
+int close(int fd) {
+	if (fd < 3) {
+         kprintf("\n Invalid file descriptor");
+         return -1;
+     }
+     
+	 dir_info* search_node = find_dir(fd);
+     if (search_node == NULL) {
+         kprintf("\n No open file for this request");
+         return -1;
+     }
+	if (search_node->v_node->is_dir == 1) {
+		kprintf("\n Cannot close directory, call closedir()");
+		return -1;
+	}	
+     delete_dir(fd);
+     return 0;
+}
+
+int read(int fd, void *buf, int count) {
+	if (fd < 3) {
+		kprintf("\n Invalid file descriptor");
+		return -1;
+	 }
+	dir_info* search_node = find_dir(fd);
+	if (search_node == NULL) {
+		kprintf("\n No open file for this request");
+		return -1;
+	}
+	if (search_node->v_node->is_dir == 1) {
+		kprintf("\n Cannnot read directory, call readdir()");
+	}   
+	uint64_t start_addr = search_node->v_node->start_addr;
+	uint64_t end_addr = search_node->v_node->end_addr;
+	uint64_t min = end_addr - start_addr;
+	if (min > count) {
+		min = count;
+	}
+	memset(buf, '\0', count);
+	memcpy(buf, (void *)start_addr, min);
+	return count;
+}
+
+
