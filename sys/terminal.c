@@ -32,8 +32,12 @@ int64_t terminal_write(int fd, void * buf, uint64_t count) {
     if (count == 0) {
         return 0;
     }
+    if(*(char *)buf == '\n') {
+        kprintf("\n");
+        return 1;
+    }
     ((char *) (buf))[count] = '\0';
-    kprintf("\n%s", buf);
+    kprintf("%s", buf);
     return count;
 }
 

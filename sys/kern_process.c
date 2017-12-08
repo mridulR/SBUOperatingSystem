@@ -628,6 +628,7 @@ void test_terminal() {
 
 void LaunchSbush(){
     kprintf("\nLaunching Sbush...");
+	clrscreen();
     s_sbush_process = create_elf_process("rootfs/bin/sbush", NULL);
     kprintf("\n SBUSH:%d, (P:%d, PP:%d) %p", 0, s_sbush_process->pid, s_sbush_process->ppid, s_sbush_process);
     if (s_sbush_process == NULL) {
@@ -654,8 +655,8 @@ void init_start() {
 		kprintf("\n");
 		count = count + 1;
 	}
-	clrscreen();
-	kprintf("\n writting fresh from here\n");
+	//clrscreen();
+	//kprintf("\n writting fresh from here\n");
 	//test_chdir();
     //test_terminal();
 	//test_file_descriptor_table();

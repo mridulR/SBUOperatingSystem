@@ -11,5 +11,9 @@ char *gets(char *s);
 
 int getchar(void);
 
+void *memcpy(void *d, const void *s, int n);
+
+void *memset(void *s, int c, int n);
+
 #endif
 

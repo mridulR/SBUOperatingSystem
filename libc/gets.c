@@ -5,27 +5,16 @@
 
 char * gets(char *s)
 {
-  int rd = 0;
-  do
-  {
-      rd = getchar();
-  }while(rd == ' ' || rd == '\t');
+   char ch[1024];
+   for (int i = 0; i < 1024; ++i) {
+       ch[i] = '\0';
+   }
 
-  if(rd == '\n')
-  {
-    *s= '\0';
-    return NULL;
-  }
-
-  int count = 1;
-  do
-  {
-    *s++ = rd;
-    rd = getchar();
-    ++count;
-  }while(rd != '\n' && rd != -1 && count <= LINE_LENGTH);
-
-  *s = '\0';
-
-  return s;
+   read(0, ch, 1024);
+   
+   char *c = ch;
+   while(*c != '\0') {
+       *s++ = *c++;
+   }
+   return s;
 }
