@@ -31,4 +31,7 @@ bool delete_vma(uint64_t start_addr);
 void print_vma();
 uint64_t find_first_free_vma(uint64_t size);
 uint8_t check_vma_access(uint64_t addr);
+vma * copy_vma_node(vma* copy_node);
+vma * copy_vma_list(vma* copy_root);
+
 #endif

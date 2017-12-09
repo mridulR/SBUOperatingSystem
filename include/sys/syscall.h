@@ -41,6 +41,7 @@
 #define __NR_ioctl_64 16
 #define __NR_brk_64 12 
 #define __NR_lseek_64 8
+#define __NR_yield_64 249 
 
 #define MAP_ANONYMOUS 0x20
 #define MAP_PRIVATE 0x02

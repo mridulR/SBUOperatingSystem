@@ -80,6 +80,8 @@ extern dir_info * sys_opendir(char *name);
 extern struct dirent * sys_readdir(dir_info *dirp);
 extern int sys_closedir(dir_info *dirp);
 extern int sys_chdir(const char *path);
+extern uint64_t sys_fork();
+extern uint64_t sys_yield();
 
 
 void general_permission_fault() {
@@ -263,7 +265,14 @@ void helper_syscall_handler() {
 		case __NR_chdir_64 :
 			retval = sys_chdir((const char *) reg->rbx);
 			break;
-
+        case __NR_fork_64 :
+            retval = sys_fork();
+            printRunQueue();
+            break;
+        case __NR_yield_64 :
+            retval = sys_yield();
+            kprintf(" After Context Switch : \n");
+            printRunQueue();
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }

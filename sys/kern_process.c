@@ -22,6 +22,7 @@
 
 extern uint64_t KB;
 extern uint64_t PS;
+extern uint64_t UB;
 extern int64_t terminal_read(int fd, void * buf, uint64_t count);
 extern int64_t terminal_write(int fd, void * buf, uint64_t count);
 
@@ -59,10 +60,19 @@ task_struct* s_last_task      = NULL;
 task_struct* s_init_process   = NULL;
 task_struct* s_sbush_process  = NULL;
 
+uint64_t s_run_queue_count = 0;
 uint64_t s_cur_kernel_rsp;
 uint64_t s_cur_user_rsp;
 uint64_t s_last_kernel_rsp;
 uint64_t s_last_user_rsp;
+
+void printRunQueue() {
+    task_struct* proc = s_run_queue_head;
+    while(proc != NULL){
+        kprintf(" Proceess %d \n ", proc->pid);
+        proc = proc->next;
+    }
+}
 
 void init_process_queue() {
     for(int count = 0; count < s_max_process_count; ++count){
@@ -71,18 +81,34 @@ void init_process_queue() {
     }
 }
 
-void add_new_task_to_run_queue(task_struct *task) {
+void add_new_task_to_run_queue_start(task_struct *task) {
     if(s_run_queue_head == NULL) {
         s_run_queue_head = task;
         s_run_queue_tail = task;
+        ++s_run_queue_count;
         return;
     }
     task->next = s_run_queue_head;
     task->prev = NULL;
     s_run_queue_head = task;
+    ++s_run_queue_count;
     return;
 }
 
+void add_new_task_to_run_queue_end(task_struct *task) {
+    if(s_run_queue_head == NULL) {
+        s_run_queue_head = task;
+        s_run_queue_tail = task;
+        ++s_run_queue_count;
+        return;
+    }
+    task->next = NULL;
+    task->prev = s_run_queue_tail;
+    task->prev->next = task;
+    s_run_queue_tail = task;
+    ++s_run_queue_count;
+    return;
+}
 
 void remove_task_from_process_queue(uint64_t pid) {
     uint64_t save = s_cur_free_process_index;
@@ -91,6 +117,7 @@ void remove_task_from_process_queue(uint64_t pid) {
     return;
 }
 
+// Test this once
 void remove_task_from_run_queue(task_struct *task) {
    //Remove from head
    if(task == s_run_queue_head) {
@@ -101,6 +128,8 @@ void remove_task_from_run_queue(task_struct *task) {
       }
       s_run_queue_head->next->prev = NULL;
       s_run_queue_head = s_run_queue_head->next;
+      --s_run_queue_count;
+      return;
    }
 
    //Remove from tail 
@@ -111,6 +140,7 @@ void remove_task_from_run_queue(task_struct *task) {
        s_run_queue_tail->prev = NULL;
        s_run_queue_tail->next = NULL;
        s_run_queue_tail = save;
+       --s_run_queue_count;
        return;
    }
 
@@ -127,8 +157,83 @@ void remove_task_from_run_queue(task_struct *task) {
        }
        trav = trav->next;
    }
+   --s_run_queue_count;
    return;
 }
+
+task_struct* copy_task_struct(task_struct *copy_task) {
+
+    if(s_free_process_count == 0){
+        kprintf("KERNEL PANIC: FORK FAILED: Max Process limit reached !!!");
+        return NULL;
+    }
+    if(copy_task->pid > s_max_process_count){
+        kprintf("KERNEL PANIC: Invalid Parent process Id !!!");
+        return NULL;
+    }
+    uint64_t addr = KB + kmalloc(PAGE_SIZE);
+    task_struct *task = (task_struct *)addr;
+    memset(task, 0, PAGE_SIZE);
+    if(!task) {
+        kprintf("KERNEL PANIC: FORK FAILED: Can't allocate free page for task_struct !!!");
+        return NULL;
+    }
+    s_process_queue[s_cur_free_process_index].cur_task = task;
+    task->pid = s_cur_free_process_index;
+    task->ppid = copy_task->pid;
+    s_cur_free_process_index = s_process_queue[s_cur_free_process_index].nextIndex;
+    --s_free_process_count;
+
+    // copy kstack
+    task->kstack = kmalloc(PAGE_SIZE);
+    memset((uint64_t *)(KB + task->kstack), 0, PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->kstack), (uint64_t *)(KB + copy_task->kstack), PAGE_SIZE);
+
+    // copy ustack
+    task->ustack = kmalloc(PAGE_SIZE);
+    memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->ustack), (uint64_t *)(UB + copy_task->ustack), PAGE_SIZE);
+
+    // update the rsp
+    task->kernel_rsp = KB + task->kstack + PS;
+    task->user_rsp   = KB + task->ustack + PS;
+
+    task->exit_status = 0;
+    task->state = INIT;
+    task->mode = KERNEL;
+    task->rip = 0;
+
+    // copy pml4
+    task->pml4 = kmalloc(PAGE_SIZE);
+    //kprintf(" USER PML4: %p ", task->pml4);
+    memset((uint64_t *)(KB + task->pml4), 0, PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->pml4), (uint64_t *)(KB + copy_task->pml4), PAGE_SIZE);
+    task->next = NULL;
+    task->prev = NULL;
+    memset(&(task->name),'\0', 256);
+    if(s_cur_free_process_index == 0) {
+        memcpy(&(task->name),"SBUSH", 5);
+    }
+    else {
+        memcpy(&(task->name),"Process", 7);
+    }
+    //vma entries
+    task->vma_root = copy_vma_list(copy_task->vma_root);
+    task->heap_top   = copy_task->heap_top;
+    task->heap_start = copy_task->heap_start;
+
+    // Terminal Operations
+    task->term_oprs.terminal_read  = &terminal_read;         
+    task->term_oprs.terminal_write = &terminal_write;         
+
+	// File Descriptor Table  ----  Since terminal are mapped separately set it to NUll initially
+    task->file_root = NULL;
+
+	// Current working directory should be first set to 'rootfs/bin'
+	memcpy(&(task->cwd),"rootfs/bin", 10);
+    return task;
+}
+
 
 task_struct* create_task(uint64_t ppid) {
     if(s_free_process_count == 0){
@@ -153,7 +258,9 @@ task_struct* create_task(uint64_t ppid) {
         task->pid = s_cur_free_process_index;
         s_cur_free_process_index = s_process_queue[0].nextIndex;
         s_run_queue_head = s_sbush_process;
+        s_run_queue_tail = s_sbush_process;
         --s_free_process_count;
+        ++s_run_queue_count;
     }
     else {
         s_process_queue[s_cur_free_process_index].cur_task = task;
@@ -171,7 +278,7 @@ task_struct* create_task(uint64_t ppid) {
     //task->user_rsp   = KB + task->ustack + PS;
     task->user_rsp   = 0;
     task->exit_status = 0;
-    task->state = RUNNING;
+    task->state = INIT;
     task->mode = KERNEL;
     task->rip = 0;
     task->pml4 = kmalloc(PAGE_SIZE);
@@ -199,6 +306,12 @@ task_struct* create_task(uint64_t ppid) {
     return task;
 }
 
+uint64_t sys_fork() {
+  task_struct* task = copy_task_struct(s_cur_run_task);
+  add_new_task_to_run_queue_end(task);
+  return task->pid; 
+}
+
 void freeTask(task_struct *task) {
     kfree(task->kstack);
     kfree(task->ustack);
@@ -212,7 +325,7 @@ void kill_task(uint64_t pid) {
         return ;
     }
     task_struct* pcb;
-    pcb = s_process_queue[pid].cur_task; 
+    pcb = s_process_queue[pid].cur_task;
     remove_task_from_run_queue(pcb);
     remove_task_from_process_queue(pid);
     freeTask(pcb);
@@ -222,6 +335,42 @@ void kill_task(uint64_t pid) {
 void switch_to(task_struct *cur, task_struct *next);
 
 void first_switch_to(task_struct *cur, task_struct *next);
+
+task_struct* get_next_task_from_run_queue() {
+    return s_cur_run_task->next;
+}
+
+void update_run_queue() {
+  if(s_run_queue_head != s_run_queue_tail) {
+      task_struct * save = s_run_queue_head->next;
+      s_run_queue_tail->next = s_run_queue_head;
+      s_run_queue_head->next = NULL;
+      s_run_queue_head->prev = s_run_queue_tail;
+      s_run_queue_tail = s_run_queue_head;
+      s_run_queue_head = save;
+  }
+  return; 
+}
+
+uint64_t sys_yield() {
+    task_struct* cur  = s_cur_run_task;
+    task_struct* next = get_next_task_from_run_queue();
+
+    if(next != NULL && cur != next) {
+        kprintf(" Will do Context Switch cur(%d) to next(%d) !!!", s_cur_run_task->pid, next->pid);
+        set_cr3_register(next->pml4);
+        if(next->state == INIT) {
+            first_switch_to(cur, next);
+        }
+        else {
+            switch_to(cur, next);
+        }
+        s_cur_run_task = next;
+        update_run_queue();
+    }
+    return s_cur_run_task->pid;
+}
+
 
 void test_user_function()
 {
@@ -252,7 +401,7 @@ void test_user_function()
     __asm__ __volatile__ ("iretq\n");*/
 }
 
-void switch_to_ring3() {
+void test_switch_to_ring3() {
 
     set_tss_rsp((uint64_t *)s_init_process->kernel_rsp);
 
@@ -272,6 +421,29 @@ void switch_to_ring3() {
         :"r" (&test_user_function)
     );
 }
+
+
+void switch_to_ring3(task_struct* cur, task_struct* next) {
+
+    set_tss_rsp((uint64_t *)(cur->kernel_rsp));
+
+    __asm__ __volatile__
+    (  "pushq $0x23\n"
+       "pushq %0\n"
+       "pushfq\n"
+       "pushq $0x2b\n"
+       :
+       :"r" (next->user_rsp)
+    );
+    
+    __asm__ __volatile__ 
+    (   "pushq %0\n"
+        "iretq\n"
+        :
+        :"r" (next->rip)
+    );
+}
+
 
 /*void function_2(int d) {
     int a = 20;

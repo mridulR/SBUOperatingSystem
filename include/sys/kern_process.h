@@ -59,5 +59,18 @@ struct process_queue {
 typedef struct process_queue Process_queue;
 
 task_struct* create_task(uint64_t parent_pid);
+void printRunQueue();
+void init_process_queue();
+void add_new_task_to_run_queue_start(task_struct *task);
+void add_new_task_to_run_queue_end(task_struct *task);
+void remove_task_from_process_queue(uint64_t pid);
+void remove_task_from_run_queue(task_struct *task);
+task_struct* copy_task_struct(task_struct *copy_task);
+uint64_t sys_fork();
+void freeTask(task_struct *task);
+void kill_task(uint64_t pid);
+void LaunchSbush();
+void init_start();
+uint64_t sys_yield();
 
 #endif

@@ -25,6 +25,43 @@ void print_vma() {
     }
 }
 
+vma * copy_vma_node(vma* copy_node) {
+    uint64_t addr = KB + kmalloc(sizeof(vma));
+    vma * node = (vma *)addr;
+    memset((uint8_t *)node, '\0', PAGE_SIZE);
+    node->start_addr = copy_node->start_addr;
+    node->end_addr = copy_node->end_addr;
+    node->vma_type = copy_node->vma_type; 
+    node->next = NULL;
+    node->prev = NULL;
+    return node; 
+}
+
+
+vma * copy_vma_list(vma* copy_root) {
+    vma *root = NULL;
+    vma *ptr = NULL;
+    if (copy_root == NULL) {
+        kprintf("\n VMA Root node is NULL");
+        return NULL;
+    } else {
+        vma * trav = copy_root;
+        while (trav != NULL) {
+            kprintf("%d ", trav->start_addr);
+            if(root == NULL) {
+                root = copy_vma_node(trav);
+                ptr = root;
+            }
+            else {
+                ptr->next = copy_vma_node(trav);
+                ptr = ptr->next;
+            }
+            trav = trav->next;
+        }
+    }
+    return root;
+}
+
 vma * find_vma(uint64_t start_addr) {
     if (s_cur_run_task == NULL) {
         kprintf("\nKernel Panic : No current running process");

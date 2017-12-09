@@ -163,6 +163,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     }
 
 	sys_clrscreen();
+    elf_task->state = RUNNING;
 
     // Switch to ring3 
     my_switch_to_ring3(elf_task);

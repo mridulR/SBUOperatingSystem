@@ -41,4 +41,6 @@ int setenv(const char *name, const char *value, int overwrite);
 void *mmap(void *addr, int length, int prot, int flags, int fd, int offset);
 int munmap(void *addr, int length);
 
+uint64_t yield();
+
 #endif

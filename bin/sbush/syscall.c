@@ -494,3 +494,21 @@ int closedir(dir_info *dirp) {
 }
 
 
+uint64_t yield() { 
+    uint64_t syscall_num = __NR_yield_64;
+    uint64_t ret_val;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num)
+      : "rax"
+  );  
+
+  return ret_val;
+}
+
+
