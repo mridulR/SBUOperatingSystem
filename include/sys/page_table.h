@@ -60,4 +60,5 @@ uint64_t readErrorCode();
 
 void page_fault_handler(uint64_t vaddr);
 
+void invalidate_page_table(uint64_t vaddr);
 #endif

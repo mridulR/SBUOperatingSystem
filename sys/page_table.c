@@ -249,6 +249,54 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
 }
 
 
+void invalidate_page_table(uint64_t vaddr)
+{
+    uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
+    uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
+    uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
+    uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
+    
+    uint64_t pml4_table = s_cur_run_task->pml4;
+    uint64_t v_pml4_table = KB + pml4_table;
+    uint64_t pml4_entry = *(uint64_t *)(v_pml4_table + (sizeof(uint64_t) * pml4Index));
+    uint64_t pdpt_table;
+    if(pml4_entry & PTE_P) {
+        pdpt_table = PAGE_GET_PHYSICAL_ADDRESS(pml4_entry);
+    }
+    else{
+        return;
+    }
+    uint64_t v_pdpt_table = KB + pdpt_table;
+    uint64_t pdpt_entry = *(uint64_t *)(v_pdpt_table + (sizeof(uint64_t) * pdptIndex));
+    uint64_t pd_table;
+    if(pdpt_entry & PTE_P) {
+        pd_table = PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry);
+    }
+    else{
+        return;
+    }
+    uint64_t v_pd_table = KB + pd_table;
+    uint64_t pd_entry = *(uint64_t *)(v_pd_table + (sizeof(uint64_t) * pdIndex));
+    uint64_t pt_table;
+    if(pd_entry & PTE_P) {
+        pt_table = PAGE_GET_PHYSICAL_ADDRESS(pd_entry);
+    }
+    else{
+        return;
+    }
+    uint64_t vaddr_pt = KB + pt_table;
+    uint64_t pt_entry = *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex));
+    if(pt_entry & PTE_P) {
+        uint64_t entry = pt_entry;
+        entry &= (~PTE_P);
+        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
+        return;
+    }
+    return;
+}
+
+
+
 void page_fault_handler(uint64_t vaddr)
 {
     uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
