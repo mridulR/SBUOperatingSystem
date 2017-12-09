@@ -40,3 +40,8 @@ It supports arguments as :
 
 5.) clrscr
     Eg, clrscr
+
+6.) test
+	Eg, test
+
+    This method is used for testing malloc.
