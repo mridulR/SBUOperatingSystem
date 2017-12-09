@@ -105,5 +105,6 @@ void deallocate_phys_page(uint64_t addr) {
     uint64_t save = s_cur_page_index;
     s_cur_page_index =  addr_index;
     s_phys_page[addr_index].nextIndex = save;
+    ++s_free_page_count;
     return;
 }

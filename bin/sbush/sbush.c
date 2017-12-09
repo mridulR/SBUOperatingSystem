@@ -94,8 +94,28 @@ int parse_command(char * buff, char * arg) {
 		return 5;
 	}
 
+	if (strlen(buff) >= 4 && buff[0] == 't' && buff[1] == 'e' && buff[2] == 's'
+	    && buff[3] == 't') {
+	       return 6;
+    }
+
+
 	return -1;
 }
+
+
+/*
+This method is used for testing malloc/fork etc which where not integrated as launching
+binaries was not completed.
+*/
+void test() {
+	char * ptr = (char *)malloc(3);
+	*ptr = 'm';
+	printf("\n %c \n", ptr);
+}
+
+
+
 
 int main(int argc, char *argv[], char *envp[]) {
 
@@ -144,6 +164,11 @@ int main(int argc, char *argv[], char *envp[]) {
 		case 5:
 			// clrscr
 			execute_clrscr();
+			break;
+
+        case 6:
+			// Test malloc() / fork() etc from here
+			test();
 			break;
 
 		default:
