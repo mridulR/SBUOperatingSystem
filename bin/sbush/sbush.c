@@ -168,6 +168,7 @@ int main(int argc, char *argv[], char *envp[]) {
 			break;
 
         case 6:
+			// Test malloc() / fork() etc from here - write your code from libc here.
 			test();
 			break;
 
