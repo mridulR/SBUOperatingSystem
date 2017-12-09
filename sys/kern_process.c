@@ -359,13 +359,17 @@ uint64_t sys_yield() {
     if(next != NULL && cur != next) {
         kprintf(" Will do Context Switch cur(%d) to next(%d) !!!", s_cur_run_task->pid, next->pid);
         set_cr3_register(next->pml4);
-        if(next->state == INIT) {
-            first_switch_to(cur, next);
-        }
-        else {
-            switch_to(cur, next);
-        }
+        __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
+        __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
+        //if(next->state == INIT) {
+        //    first_switch_to(cur, next);
+        //}
+        //else {
+        switch_to(cur, next);
+        //}
         s_cur_run_task = next;
+        next->state = RUNNING;
+        cur->state  = SLEEPING;
         update_run_queue();
     }
     return s_cur_run_task->pid;
