@@ -110,8 +110,8 @@ binaries was not completed.
 */
 void test() {
     
-	for (int i = 0; i < 300000; i++) {
-		char * ptr = (char *)malloc(1000);
+	for (int i = 0; i < 4000000; i++) {
+		char * ptr = (char *)malloc(4000);
 		*ptr = 'm';
 		printf("\n %d - %c - %p" , i, *ptr, ptr);
 		free(ptr);
