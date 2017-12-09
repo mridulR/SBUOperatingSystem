@@ -231,11 +231,11 @@ void helper_syscall_handler() {
 			retval = handle_get_pid_sys_call();
 			break;
 		case __NR_mmap_64 :
-			//kprintf("Mmap was called\n");
+			kprintf("Mmap was called -  %d\n", (int)reg->rbx);
             retval = add_vma(reg->rbx);
 			break;
 		case __NR_munmap_64 :
-			//kprintf("Munmap was called\n");
+			kprintf("Munmap was called - %d\n", (int) reg->rbx);
             retval = delete_vma(reg->rbx);
 			break;
 		case __NR_getcwd_64 :

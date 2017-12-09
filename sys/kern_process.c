@@ -24,6 +24,8 @@ extern uint64_t KB;
 extern uint64_t PS;
 extern int64_t terminal_read(int fd, void * buf, uint64_t count);
 extern int64_t terminal_write(int fd, void * buf, uint64_t count);
+extern uint64_t s_free_page_count;
+extern uint64_t s_cur_page_index;
 
 extern struct dir_info * find_dir(uint64_t des);
 extern bool add_dir(int curr_child_index, struct v_file_node * v_node);
@@ -313,15 +315,16 @@ void test_vma_find_node_from_empty_vma_list() {
      }
 }
 
-/*void test_vma_add_node_to_empty_vma_list() {
+void test_vma_add_node_to_empty_vma_list() {
+	s_cur_run_task->heap_top = 1; // Initializing vma again
     if(add_vma(12345)) {
-        vma * node = find_vma(0); // This is heap top now
+        vma * node = find_vma(1); // This is heap top now
         if (node == NULL) {
             kprintf("\nFAIL : searching node after adding to empty vma list failed");
         } else {
-            if (node->start_addr == 0 && node->end_addr == 12345) {
-                if(delete_vma(0)) {
-                    node = find_vma(0);
+            if (node->start_addr == 1 && node->end_addr == 12346) {
+                if(delete_vma(1)) {
+                    node = find_vma(1);
                     if (node == NULL) {
                         kprintf("\nPASS : EmptyList -> Add -> find -> delete -> find");
                     } else {
@@ -337,75 +340,108 @@ void test_vma_find_node_from_empty_vma_list() {
     } else {
         kprintf("\nFAIL : Adding node to empty VMA list failed");
     }
-}*/
+}
 
-/*void test_vma_operations_on_bigger_list() {
-    s_cur_run_task->heap_top = 0; // Initializing vma again
-    add_vma(1); // start = 0, end = 1
-    add_vma(2); // start = 1, end = 3
-    add_vma(3); // start = 3, end = 6
-    add_vma(4); // start = 6, end = 10
-    add_vma(5); // start = 10, end = 15
-    add_vma(5); // start = 15, end = 20
-    add_vma(4); // start = 20, end = 24
-    add_vma(3); // start = 24, end = 27
+void test_vma_operations_on_bigger_list() {
+    s_cur_run_task->heap_top = 1; // Initializing vma again
+    s_cur_run_task->heap_start = 1; // Initializing vma again
+    add_vma(1); // start = 1, end = 2
+    add_vma(2); // start = 2, end = 4
+    add_vma(3); // start = 4, end = 7
+    add_vma(4); // start = 7, end = 11
+    add_vma(5); // start = 11, end = 16
+    add_vma(5); // start = 16, end = 21
+    add_vma(4); // start = 21, end = 25
+    add_vma(3); // start = 25, end = 28
     
     print_vma();
-    vma * node = find_vma(15);
-    if (node != NULL && node->start_addr == 15 && node->end_addr == 20) {
+    vma * node = find_vma(16);
+    if (node != NULL && node->start_addr == 16 && node->end_addr == 21) {
         kprintf("\nPASS : Search middle element from list");
     } else {
         kprintf("\nFAIL : Search middle element from list");
     }
 
-    node = find_vma(0);
-    if (node != NULL && node->start_addr == 0 && node->end_addr == 1) {
+    
+	node = find_vma(25);
+    if (node != NULL && node->start_addr == 25 && node->end_addr == 28) {
         kprintf("\nPASS : Search last element from list");
     } else {
         kprintf("\nFAIL : Search last element from list");
     }
 
-    node = find_vma(24);
-    if (node != NULL && node->start_addr == 24 && node->end_addr == 27) {
+    node = find_vma(1);
+    if (node != NULL && node->start_addr == 1 && node->end_addr == 2) {
         kprintf("\nPASS : Search first element from list");
     } else {
         kprintf("\nFAIL : Search first element from list");
     }
 
-    delete_vma(15);
-    node = find_vma(15);
-    if (node != NULL && node->start_addr == 15 && node->end_addr == 20) {
+    
+	delete_vma(16);
+    node = find_vma(16);
+    if (node != NULL && node->start_addr == 16 && node->end_addr == 21) {
         kprintf("\nFAIL : Search middle element from list after delete");
     } else {
         kprintf("\nPASS : Search middle element from list after delete");
     }  
 
-    delete_vma(0);
-    node = find_vma(0);
-    if (node != NULL && node->start_addr == 0 && node->end_addr == 1) {
+    delete_vma(25);
+    node = find_vma(25);
+    if (node != NULL && node->start_addr == 25 && node->end_addr == 28) {
         kprintf("\nFAIL : Search last element from list after delete");
     } else {
         kprintf("\nPASS : Search last element from list after delete");
     }
 
-    delete_vma(24);
-    node = find_vma(24);
-    if (node != NULL && node->start_addr == 24 && node->end_addr == 27) {
+    delete_vma(1);
+    node = find_vma(1);
+    if (node != NULL && node->start_addr == 1 && node->end_addr == 2) {
         kprintf("\nFAIL : Search first element from list after delete");
     } else {
         kprintf("\nPASS : Search first element from list after delete");
     }
 
     print_vma();
+
+    add_vma(1);
+	add_vma(1);
+	add_vma(1);
+	print_vma();
+}
+
+void vma_operations_stress_test() {
+	s_cur_run_task = s_init_process;
+	s_cur_run_task->heap_start = 1;
+	s_cur_run_task->heap_top = 1;
+	for (int i = 0; i < 100000; i++) {
+        kprintf("\nB: %d-%d - %d", i, s_free_page_count, s_cur_page_index);
+		add_vma(1);
+		add_vma(3);
+		add_vma(4);
+		delete_vma(2);
+		add_vma(2);
+		delete_vma(5);
+		delete_vma(1);
+		delete_vma(2);
+        kprintf("\nE: %d-%d - %d", i, s_free_page_count, s_cur_page_index);
+    }
+	/*for (int i = 0; i < 1000; i++) {
+		add_vma(1);
+		delete_vma(1);
+	}*/
+	print_vma();
 }
 
 void test_vma_operations() {
-     s_cur_run_task = s_init_process;
-     test_vma_print_empty_vma_list();
-     test_vma_find_node_from_empty_vma_list();
-     test_vma_add_node_to_empty_vma_list();
-     test_vma_operations_on_bigger_list();
-}*/
+     //s_cur_run_task = s_init_process;
+	 //s_cur_run_task->heap_start = 1;
+     //test_vma_print_empty_vma_list();
+     //test_vma_find_node_from_empty_vma_list();
+     //test_vma_add_node_to_empty_vma_list();
+     //test_vma_operations_on_bigger_list();
+	//vma_operations_stress_test();
+}
 
 
 void test_print_dir_empty_list() {
@@ -661,6 +697,7 @@ void init_start() {
     //test_terminal();
 	//test_file_descriptor_table();
 	//test_open_read_close();
+	//test_vma_operations();
 	LaunchSbush();
     while(1) {
         schedule();

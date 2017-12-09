@@ -100,27 +100,16 @@ uint64_t add_vma(uint64_t size_of_memory_allocated) {
         s_cur_run_task->vma_root = curr;
         return ret;
     }
-    vma * prev = trav;
-    while(trav != NULL) {
-        if(curr->end_addr < trav->start_addr) {
-            break;
-        }
-        prev = trav;
-        trav = trav->next;
+
+	vma * prev = trav;
+	while (trav != NULL) {
+		prev = trav;
+		trav = trav->next;
     }
-    if(prev == NULL) {
-        curr->next = s_cur_run_task->vma_root;
-        curr->prev = NULL;
-        s_cur_run_task->vma_root = curr;
-        return ret;
-    }
-    prev->next = curr;
-    curr->next = trav;
-    curr->prev = prev;
-    if (trav != NULL) {
-        trav->prev = curr;
-    }
-    return ret;
+	
+	prev->next = curr;
+	curr->prev = prev;
+	return ret;
 }
 
 // After adding vma -> caller should set vma_type by calling find with start address
@@ -162,23 +151,30 @@ bool delete_vma(uint64_t start_addr) {
     vma * trav = s_cur_run_task->vma_root;
 
     // if first node is to be deleted
-    if (trav->start_addr == start_addr) {
+    if (trav->start_addr == vma_entry->start_addr) {
         vma * next = trav->next;
         if (next != NULL) {
             next->prev = NULL;
         }
         s_cur_run_task->vma_root = next;
+		if (vma_entry->next == NULL) {
+			s_cur_run_task->heap_top = s_cur_run_task->heap_start;
+		}
         kfree((uint64_t)vma_entry);
         return true;
     }
 
-    while (trav->next->start_addr != vma_entry->start_addr) {
-        trav = trav->next;
+	vma * prev = vma_entry->prev;
+	vma * next = vma_entry->next;
+	if (next == NULL) {
+		s_cur_run_task->heap_top = prev->end_addr;
+		prev->next = NULL;
+		kfree((uint64_t) vma_entry);
+		return true;
     }
-    trav->next = vma_entry->next;
-    if (vma_entry->next != NULL) {
-        vma_entry->next->prev = trav;
-    }
+	
+	prev->next = next;
+	next->prev = prev;
     kfree((uint64_t)vma_entry);
     return true;
 }
@@ -198,25 +194,34 @@ vma* get_vma_node(uint64_t hs, uint64_t size) {
 uint64_t find_first_free_vma(uint64_t size) {
     vma * trav  = s_cur_run_task->vma_root;
     if (trav == NULL) {
-        kprintf("\nVMA list empty");
+        //kprintf("\nVMA list empty");
         return 0;
     }
     uint64_t hs = s_cur_run_task->heap_start;
     vma* node = NULL;
-    while( trav != NULL ) {
-        if((trav->start_addr - hs) > size) {
-            node = get_vma_node(hs, size);
-            break;
-        }
+
+	if (trav->start_addr > hs && (trav->start_addr - hs) >= size) {
+		node = get_vma_node(hs, size);
+		node->next = trav;
+		trav->prev = node;
+		s_cur_run_task->vma_root = node;
+		return node->start_addr;
+	} else {
+		hs = trav->end_addr;
+		trav = trav->next;
+		while( trav != NULL ) {
+			if((trav->start_addr - hs) >= size) {
+				node = get_vma_node(hs, size);
+				node->next = trav;
+				node->prev = trav->prev;
+				trav->prev->next = node;
+				trav->prev = node;
+				return node->start_addr;
+			}
         hs = trav->end_addr;
         trav = trav->next;
-    }
-    if( node == NULL ) {
-        return 0;
-    }
-    
-    //s_cur_run_task->heap_top = curr->end_addr;
-    node->next = (vma *)s_cur_run_task->vma_root;
-    s_cur_run_task->vma_root = node;
-    return node->start_addr;
+		}
+	}
+
+    return 0;    
 }
