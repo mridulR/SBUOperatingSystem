@@ -30,8 +30,12 @@ int printf(const char *fmt, ...) {
               HandleString(str);
               break;
           case 'd': 
-              i_argVal = va_arg(apList, int);
+              i_argVal = va_arg(apList, uint64_t);
               HandleSignedInt(i_argVal);
+              break;
+          case 'u': 
+              i_argVal = va_arg(apList, uint64_t);
+              HandleUnsignedInt(i_argVal);
               break;
           case 'x': 
               u_argVal = va_arg(apList, uint64_t);
@@ -98,7 +102,6 @@ void HandleString(char* str) {
 
 void HandleSignedInt(const int i_argVal) {
   int num = i_argVal;
-  const int zeroHex = 0x30;
   char ch[100];
   int numdigits = 0;
   if(num == 0) {
@@ -112,12 +115,11 @@ void HandleSignedInt(const int i_argVal) {
       num = num * (-1);
   }
   while(num > 0) {
-    ch[numdigits++] = num % 10; 
+    ch[numdigits++] = 48 + (num % 10); 
     num=num/10;
   }
   for(int i = numdigits-1; i >= 0; --i) {
-      char val =  zeroHex + ch[i];
-      write(1, &val, 1);
+      write(1, &ch[i], 1);
   }
 }
 
@@ -156,7 +158,6 @@ void HandleAddress(uint64_t addr){
 
 void HandleUnsignedInt(unsigned int u_argVal) {
   unsigned int num = u_argVal;
-  const unsigned int zeroHex = 0x30;
   char ch[100] = {0};
   int numdigits = 0;
   char val;
@@ -166,12 +167,11 @@ void HandleUnsignedInt(unsigned int u_argVal) {
     return;
   }
   while(num > 0) {
-    ch[numdigits++] = num % 10; 
+    ch[numdigits++] = 48 + (num % 10); 
     num=num/10;
   }
   for(int i = numdigits-1; i >= 0; --i) {
-      val = (zeroHex + ch[i]);
-      write(1, &val, 1);
+      write(1, &ch[i], 1);
   }
 }
 
