@@ -235,6 +235,9 @@ void helper_syscall_handler() {
 			break;
 		case __NR_munmap_64 :
             retval = delete_vma(reg->rbx);
+            invalidate_page_table(reg->rbx);
+            __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
+            __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
 			break;
 		case __NR_getcwd_64 :
 			retval = (uint64_t)sys_getcwd((char *)reg->rbx, reg->rcx);

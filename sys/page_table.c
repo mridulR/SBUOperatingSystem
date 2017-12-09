@@ -288,8 +288,9 @@ void invalidate_page_table(uint64_t vaddr)
     uint64_t pt_entry = *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex));
     if(pt_entry & PTE_P) {
         uint64_t entry = pt_entry;
-        entry &= (~PTE_P);
-        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
+        entry = (entry & 0xFFFFFFFFFFFFF000);
+        kfree(entry);
+        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = 0;
         return;
     }
     return;
