@@ -77,11 +77,11 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
 
             if(heap_top < (uint64_t)end_va) {
                 if(end_va % PS == 0) {
-                  heap_top = end_va;
+                  heap_top = end_va + PS;
                 }
                 else {
                     uint64_t offset = end_va % PS;
-                    heap_top = end_va + PS - offset;
+                    heap_top = end_va + PS - offset + PS;
                 }
             }
             if ((int)prgm_header->p_flags == 5)  {
@@ -163,7 +163,7 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     }
 
 	sys_clrscreen();
-
+	
     // Switch to ring3 
     my_switch_to_ring3(elf_task);
     kprintf(" Test: in Elf64.c");

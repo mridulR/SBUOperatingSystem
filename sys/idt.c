@@ -97,7 +97,7 @@ void general_permission_fault() {
 }
 
 void general_page_fault() {
-    kprintf("\nGENERAL PAGE FAULT !!!");
+    //kprintf("\nGENERAL PAGE FAULT !!!");
     uint64_t ret = readCR2();
     uint64_t error = 0;
     __asm__ __volatile__ 
@@ -118,15 +118,15 @@ void general_page_fault() {
         kprintf("\nCR2 Value: %p", ret);
         while(1) { }
     }
-    kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
-    kprintf("\nCR2 Value: %p", ret);
-    page_fault_handler(ret);
+    //kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
+    //kprintf("\nCR2 Value: %p", ret);
+    page_fault_handler(addr);
     //flush_tlb_entry(ret);
     __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
     __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
     __asm__ __volatile__ ("sti\n" : : );
  
-    while(1) {}
+    //while(1) {}
 }
 
 void helper_interrupt_service_routine() {
@@ -231,11 +231,9 @@ void helper_syscall_handler() {
 			retval = handle_get_pid_sys_call();
 			break;
 		case __NR_mmap_64 :
-			kprintf("Mmap was called -  %d\n", (int)reg->rbx);
             retval = add_vma(reg->rbx);
 			break;
 		case __NR_munmap_64 :
-			kprintf("Munmap was called - %d\n", (int) reg->rbx);
             retval = delete_vma(reg->rbx);
 			break;
 		case __NR_getcwd_64 :

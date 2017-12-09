@@ -16,6 +16,7 @@ uint64_t s_pml4_table;
 uint64_t cr3;
 uint64_t KB = (uint64_t)KERN_BASE;
 uint64_t PAGE_SIZE = 0x1000;
+extern uint64_t UB;
 
 uint64_t create_pml4_table(){
     s_pml4_table  = allocate_phys_page();
@@ -254,7 +255,7 @@ void page_fault_handler(uint64_t vaddr)
     uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
     uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
     uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
-
+    
     uint64_t pml4_table = s_cur_run_task->pml4; //s_init_process->pml4);
     //kprintf("\n PML4  (%p) KB: %p s_pml4_table: %p ", pml4_table, KB, s_pml4_table);
     uint64_t v_pml4_table = KB + pml4_table;
@@ -262,6 +263,9 @@ void page_fault_handler(uint64_t vaddr)
     uint64_t pdpt_table;
     if(pml4_entry & PTE_P) {
         pdpt_table = PAGE_GET_PHYSICAL_ADDRESS(pml4_entry);
+        uint64_t entry = pml4_entry;
+        entry |= (PTE_P | PTE_W | PTE_U);
+        *(uint64_t *)(v_pml4_table + (sizeof(uint64_t) * pml4Index)) = entry;
         //kprintf(" Pdpt Table = %p, Index: %d ", pdpt_table, pdptIndex);
     }
     else{
@@ -277,6 +281,9 @@ void page_fault_handler(uint64_t vaddr)
     uint64_t pd_table;
     if(pdpt_entry & PTE_P) {
         pd_table = PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry);
+        uint64_t entry = pdpt_entry;
+        entry |= (PTE_P | PTE_W | PTE_U);
+        *(uint64_t *)(v_pdpt_table + (sizeof(uint64_t) * pdptIndex)) = entry;
         //kprintf(" Pd Table = %p  ", pd_table);
     }
     else{
@@ -292,6 +299,9 @@ void page_fault_handler(uint64_t vaddr)
     uint64_t pt_table;
     if(pd_entry & PTE_P) {
         pt_table = PAGE_GET_PHYSICAL_ADDRESS(pd_entry);
+        uint64_t entry = pd_entry;
+        entry |= (PTE_P | PTE_W | PTE_U);
+        *(uint64_t *)(v_pd_table + (sizeof(uint64_t) * pdIndex)) = entry;
         //kprintf(" PT table = %p  ", pt_table);
     }
     else{
@@ -305,6 +315,9 @@ void page_fault_handler(uint64_t vaddr)
     uint64_t pt_entry = *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex));
     //kprintf(" PTI : %d  [%p - %p] \n", ptIndex, vaddr_pt, pt_entry);
     if(pt_entry & PTE_P) {
+        uint64_t entry = pt_entry;
+        entry |= (PTE_P | PTE_W | PTE_U);
+        *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
         return;
     }
     else{
