@@ -109,7 +109,6 @@ This method is used for testing malloc/fork etc which where not integrated as la
 binaries was not completed.
 */
 void test() {
-    
 	for (int i = 0; i < 4000000; i++) {
 		char * ptr = (char *)malloc(4000);
 		*ptr = 'm';
@@ -169,7 +168,6 @@ int main(int argc, char *argv[], char *envp[]) {
 			break;
 
         case 6:
-			// Test malloc() / fork() etc from here - write your code from libc here.
 			test();
 			break;
 
