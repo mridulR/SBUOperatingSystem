@@ -8,6 +8,7 @@
 #include <sys/page_table.h>
 #include <sys/gdt.h>
 #include <sys/vma.h>
+#include <sys/kmalloc.h>
 
 #define true 1
 #define false 0
@@ -20,7 +21,7 @@ extern task_struct* s_cur_run_task;
 
 uint64_t UB       = 0x0000000F00000000;
 uint64_t HEAP_END = 0x0000000EFFFF0000;
-
+extern uint64_t KB;
 extern uint64_t PS;
 extern uint64_t PAGE_SIZE;
 
@@ -41,6 +42,7 @@ void my_switch_to_ring3(task_struct *elf_task) {
         :
         :"r" (elf_task->entry_addr)
     );
+
 }
 
 
@@ -106,16 +108,15 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     elf_task->heap_top   =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
     elf_task->heap_start =  (uint64_t)(0xFFFFFFFFFFFFFFFF & (uint64_t)heap_top);
     kprintf(" Heap TOP %p ", elf_task->heap_top);
-    map_process_address_space(UB, 1);
-    memset((uint64_t *)(UB), 0, PAGE_SIZE);
-    
-    map_process_address_space(UB+PS, 1);
-    memset((uint64_t *)(UB+PS), 0, PAGE_SIZE);
+    elf_task->ustack = (0xFFFFFFFFFFFFFFFF & kmalloc(PAGE_SIZE));
+    for(int i = 0; i< PS; ++i) {
+        user_map_vaddr_to_physaddr(UB + i, elf_task->ustack, 1);
+    }
+    memset((uint64_t *)(KB + elf_task->ustack), 0, PAGE_SIZE);
 
     elf_task->user_rsp   = UB + PS;
     elf_task->mode = USER;
 
-    //map_process_address_space(elf_task->user_rsp, 4096);
     // Reset prgm header
     prgm_header = (Elf64_Phdr *) ((void *) elf_header + elf_header->e_phoff);
     
@@ -123,10 +124,6 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
     __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
     __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
     
-    /*uint64_t *ptr = (uint64_t *)0xEFFFFFF0;
-    *ptr = 24;
-    kprintf(" PTR = %d", *ptr);*/
-
     for (int i = 0; i < elf_header->e_phnum; ++i) {
         // Identify code and data segment
         if ((int)prgm_header->p_type == 1) {
@@ -143,7 +140,6 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
                 memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), size);
                 kprintf("\n Range1[ Size - %d,  %p - %p ]\n", size, (uint64_t)(elf_header + prgm_header->p_offset),
                         (uint64_t)((elf_header + prgm_header->p_offset) + end_va));
-                //memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), prgm_header->p_filesz);
                 //kprintf("\nGot Text segment");
             } 
             else if ((int)prgm_header->p_flags == 6) { 
@@ -153,7 +149,6 @@ void parse_elf_and_fill_pcb(Elf64_Ehdr * elf_header, task_struct * elf_task) {
                 memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), size);
                 kprintf("\n Range2[ %p - %p ]\n", (uint64_t)(elf_header + prgm_header->p_offset),
                         (uint64_t)((elf_header + prgm_header->p_offset) + end_va));
-                //memcpy((uint64_t *)start_va, (uint64_t *) (elf_header + prgm_header->p_offset), prgm_header->p_filesz);
             } 
             else {
                 kprintf("\nKERNEL PANIC: Got Unidentified segment [start_va: %p, end_va: %p]", start_va, end_va);

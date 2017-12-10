@@ -183,19 +183,20 @@ void map_free_pages(uint64_t phys_page_start, uint64_t phys_page_end) {
     return;
 }
 
-void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
+
+void user_map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
     uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
     uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
     uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
     uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
-
-    uint64_t pml4_table = s_pml4_table;
+    
+    uint64_t pml4_table = readCR3();
     if(!s_pml4_table) {
          kprintf("KERNEL PANIC: PML4 table missing !!!");
          return;
     }
 
-    uint64_t pml4_entry = *(uint64_t *)(pml4_table + (sizeof(uint64_t) * pml4Index));
+    uint64_t pml4_entry = *(uint64_t *)(KB + pml4_table + (sizeof(uint64_t) * pml4Index));
     //kprintf(" PML4 = %p  ", pml4_entry);
     uint64_t pdpt_table;
     if(pml4_entry & PTE_P) {
@@ -209,7 +210,7 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
             return;
         }
     }
-    uint64_t pdpt_entry = *(uint64_t *)(pdpt_table + (sizeof(uint64_t) * pdptIndex));
+    uint64_t pdpt_entry = *(uint64_t *)(KB + pdpt_table + (sizeof(uint64_t) * pdptIndex));
     //kprintf(" PDPT = %p  ", pdpt_entry);
     uint64_t pd_table;
     if(pdpt_entry & PTE_P) {
@@ -223,7 +224,71 @@ void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
             return;
         }
     }
-    uint64_t pd_entry = *(uint64_t *)(pd_table + (sizeof(uint64_t) * pdIndex));
+    uint64_t pd_entry = *(uint64_t *)(KB + pd_table + (sizeof(uint64_t) * pdIndex));
+    //kprintf(" PD = %p  ", pd_entry);
+    uint64_t pt_table;
+    if(pd_entry & PTE_P) {
+        pt_table = PAGE_GET_PHYSICAL_ADDRESS(pd_entry);
+        //kprintf(" PT table = %p  ", (uint64_t)pt_table);
+    }
+    else{
+        pt_table = create_pt_table(pd_table, (sizeof(uint64_t) * pdIndex), user);
+        if(!pt_table) {
+            kprintf("kernel panic: can't allocate free page for pd table !!!");
+            return;
+        }
+    }
+    uint64_t vaddr_pt = KB + pt_table;
+    uint64_t entry = physaddr;
+    entry |= (PTE_P | PTE_W | PTE_U);
+    //entry |= (PTE_P | PTE_W );
+    //kprintf(" Virtual PT table = %p  Entry = %p  ptIndex = %p", (uint64_t)vaddr_pt, (uint64_t)entry, ptIndex);
+    *(uint64_t *)(vaddr_pt + (sizeof(uint64_t) * ptIndex)) = entry;
+    //kprintf(" Vaddr: %p, Paddr= %p ", vaddr, physaddr);
+    return;
+}
+
+void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user) {
+    uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
+    uint64_t pdptIndex = PDPT_ENTRY_INDEX(vaddr);
+    uint64_t pdIndex = PD_ENTRY_INDEX(vaddr);
+    uint64_t ptIndex = PT_ENTRY_INDEX(vaddr);
+    
+    uint64_t pml4_table = s_pml4_table;
+    if(!s_pml4_table) {
+         kprintf("KERNEL PANIC: PML4 table missing !!!");
+         return;
+    }
+
+    uint64_t pml4_entry = *(uint64_t *)(KB + pml4_table + (sizeof(uint64_t) * pml4Index));
+    //kprintf(" PML4 = %p  ", pml4_entry);
+    uint64_t pdpt_table;
+    if(pml4_entry & PTE_P) {
+        pdpt_table = PAGE_GET_PHYSICAL_ADDRESS(pml4_entry);
+        //kprintf(" Pdpt Table = %p  ", (uint64_t)pdpt_table);
+    }
+    else{
+        pdpt_table = create_pdpt_table(pml4_table, (sizeof(uint64_t) * pml4Index), user);
+        if(!pdpt_table) {
+            kprintf("KERNEL PANIC: Can't allocate free page for PDPT table !!!");
+            return;
+        }
+    }
+    uint64_t pdpt_entry = *(uint64_t *)(KB + pdpt_table + (sizeof(uint64_t) * pdptIndex));
+    //kprintf(" PDPT = %p  ", pdpt_entry);
+    uint64_t pd_table;
+    if(pdpt_entry & PTE_P) {
+        pd_table = PAGE_GET_PHYSICAL_ADDRESS(pdpt_entry);
+        //kprintf(" Pd Table = %p  ", (uint64_t)pd_table);
+    }
+    else{
+        pd_table = create_pd_table(pdpt_table, (sizeof(uint64_t) * pdptIndex), user);
+        if(!pd_table) {
+            kprintf("kernel panic: can't allocate free page for pd table !!!");
+            return;
+        }
+    }
+    uint64_t pd_entry = *(uint64_t *)(KB + pd_table + (sizeof(uint64_t) * pdIndex));
     //kprintf(" PD = %p  ", pd_entry);
     uint64_t pt_table;
     if(pd_entry & PTE_P) {

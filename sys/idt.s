@@ -109,6 +109,7 @@ helper_page_fault_handler:
   pop %rcx
   pop %rbx
   pop %rax
+  addq $8,%rsp
   iretq
 
 .global helper_general_permission_fault_handler 
@@ -144,6 +145,7 @@ helper_general_permission_fault_handler:
   pop %rcx
   pop %rbx
   pop %rax
+  addq $8,%rsp
   iretq
 
 

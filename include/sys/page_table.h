@@ -48,6 +48,8 @@ uint64_t create_pt_table(uint64_t pdTable, uint64_t index, uint8_t user);
 
 void map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user);
 
+void user_map_vaddr_to_physaddr(uint64_t vaddr, uint64_t physaddr, uint8_t user);
+
 void map_free_pages(uint64_t phys_page_start, uint64_t phys_page_end);
 
 uint64_t convert_virtual_to_phys(uint64_t vaddr);

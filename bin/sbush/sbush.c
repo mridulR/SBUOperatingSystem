@@ -106,16 +106,16 @@ int main(int argc, char *argv[], char *envp[]) {
     char buf[100];
 	char arg[100];
 
-    uint64_t pid = fork();
+    /*uint64_t pid = fork();
     if( pid == 0) {
         printf(" I am Child !!! RET = %d ", pid);
         while(1) { }
     }
     else {
         printf(" I am Parent !!! CPID = %d ", pid);
-        yield();
+        //yield();
         while(1) { }
-    }
+    }*/
 
     while(1) {
       puts("\nsbush~>");

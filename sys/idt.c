@@ -118,6 +118,7 @@ void general_page_fault() {
     if(!isValid) {
         kprintf("INVALID MEMORY ACCESS: SEGMENTATION FAULT !!! \n");
         kprintf("\nCR2 Value: %p", ret);
+        kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error));
         while(1) { }
     }
     kprintf("\nError Code: (%p, %d)", error, *(uint64_t *)(error+8));
@@ -267,6 +268,7 @@ void helper_syscall_handler() {
 			break;
         case __NR_fork_64 :
             retval = sys_fork();
+            //sys_yield();
             printRunQueue();
             break;
         case __NR_yield_64 :

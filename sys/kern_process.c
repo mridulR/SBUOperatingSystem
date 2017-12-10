@@ -192,11 +192,11 @@ task_struct* copy_task_struct(task_struct *copy_task) {
     // copy ustack
     task->ustack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
-    memcpy((uint64_t *)(KB + task->ustack), (uint64_t *)(UB + copy_task->ustack), PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->ustack), (uint64_t *)(copy_task->ustack), PAGE_SIZE);
 
     // update the rsp
     task->kernel_rsp = KB + task->kstack + PS;
-    task->user_rsp   = KB + task->ustack + PS;
+    task->user_rsp   = UB + task->ustack + PS;
 
     task->exit_status = 0;
     task->state = INIT;
@@ -211,7 +211,7 @@ task_struct* copy_task_struct(task_struct *copy_task) {
     task->next = NULL;
     task->prev = NULL;
     memset(&(task->name),'\0', 256);
-    if(s_cur_free_process_index == 0) {
+    if(task->pid  == 0) {
         memcpy(&(task->name),"SBUSH", 5);
     }
     else {
@@ -309,6 +309,7 @@ task_struct* create_task(uint64_t ppid) {
 uint64_t sys_fork() {
   task_struct* task = copy_task_struct(s_cur_run_task);
   add_new_task_to_run_queue_end(task);
+  sys_yield();
   return task->pid; 
 }
 

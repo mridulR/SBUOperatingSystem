@@ -9,6 +9,8 @@
 
 extern task_struct* s_cur_run_task;
 extern uint64_t KB;
+extern uint64_t PS;
+extern uint64_t UB;
 extern uint64_t HEAP_END;
 
 void print_vma() {
@@ -89,7 +91,7 @@ uint8_t check_vma_access(uint64_t addr) {
         return 0;
     }
     while (trav != NULL) {
-        if (trav->start_addr >= addr && trav->end_addr <= addr ) {
+        if (trav->start_addr >= addr && trav->end_addr < addr ) {
             if(trav->vma_type == TEXT) {
                 return 0;
             }
@@ -166,7 +168,7 @@ bool create_add_vma(uint64_t start_addr, uint64_t end_addr, Vma_Type type) {
         kprintf("\nKernel Panic : No current running process");
         return false;
     }
-    if ( type == HEAP) {
+    if (type == HEAP) {
         kprintf("Wrong Invocation to map HEAP\n");
         return false;
     }
