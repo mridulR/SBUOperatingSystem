@@ -361,8 +361,6 @@ void invalidate_page_table(uint64_t vaddr)
     return;
 }
 
-
-
 void page_fault_handler(uint64_t vaddr)
 {
     uint64_t pml4Index = PML4_ENTRY_INDEX(vaddr);
