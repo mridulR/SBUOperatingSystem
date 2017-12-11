@@ -20,6 +20,7 @@
 
 #define PAGE_SIZE 0x1000
 
+extern struct reg_info* reg;
 extern uint64_t KB;
 extern uint64_t PS;
 extern uint64_t UB;
@@ -38,7 +39,7 @@ extern int sys_close(int fd);
 extern int sys_read(int fd, void *buf, int count);
 
 extern v_file_node* root_node;
-extern v_file_node* tarfs_mount_node; 
+extern v_file_node* tarfs_mount_node;
 extern v_file_node* get_root_node();
 extern v_file_node* search_file(const char* dir_path, v_file_node * start_node);
 extern void print_node_inorder(v_file_node* root);
@@ -132,7 +133,7 @@ void remove_task_from_run_queue(task_struct *task) {
       return;
    }
 
-   //Remove from tail 
+   //Remove from tail
    if(task == s_run_queue_tail) {
        task_struct *save;
        save = s_run_queue_tail->prev;
@@ -192,11 +193,11 @@ task_struct* copy_task_struct(task_struct *copy_task) {
     // copy ustack
     task->ustack = kmalloc(PAGE_SIZE);
     memset((uint64_t *)(KB + task->ustack), 0, PAGE_SIZE);
-    memcpy((uint64_t *)(KB + task->ustack), (uint64_t *)(copy_task->ustack), PAGE_SIZE);
+    memcpy((uint64_t *)(KB + task->ustack), (uint64_t *)(UB), PAGE_SIZE);
 
     // update the rsp
     task->kernel_rsp = KB + task->kstack + PS;
-    task->user_rsp   = UB + task->ustack + PS;
+    task->user_rsp   = UB + PS;
 
     task->exit_status = 0;
     task->state = INIT;
@@ -223,8 +224,8 @@ task_struct* copy_task_struct(task_struct *copy_task) {
     task->heap_start = copy_task->heap_start;
 
     // Terminal Operations
-    task->term_oprs.terminal_read  = &terminal_read;         
-    task->term_oprs.terminal_write = &terminal_write;         
+    task->term_oprs.terminal_read  = &terminal_read;
+    task->term_oprs.terminal_write = &terminal_write;
 
 	// File Descriptor Table  ----  Since terminal are mapped separately set it to NUll initially
     task->file_root = NULL;
@@ -297,8 +298,8 @@ task_struct* create_task(uint64_t ppid) {
     task->vma_root = NULL;
     task->heap_top = 0;   // Should be filled from elf file
     // Terminal Operations
-    task->term_oprs.terminal_read  = &terminal_read;         
-    task->term_oprs.terminal_write = &terminal_write;         
+    task->term_oprs.terminal_read  = &terminal_read;
+    task->term_oprs.terminal_write = &terminal_write;
 	// File Descriptor Table  ----  Since terminal are mapped separately set it to NUll initially
     task->file_root = NULL;
 	// Current working directory should be first set to 'rootfs/bin'
@@ -310,7 +311,7 @@ uint64_t sys_fork() {
   task_struct* task = copy_task_struct(s_cur_run_task);
   add_new_task_to_run_queue_end(task);
   sys_yield();
-  return task->pid; 
+  return task->pid;
 }
 
 void freeTask(task_struct *task) {
@@ -333,7 +334,14 @@ void kill_task(uint64_t pid) {
     return;
 }
 
-void switch_to(task_struct *cur, task_struct *next);
+void switch_to(task_struct *cur, task_struct *next) {
+    cur->kernel_rsp  = (uint64_t) reg;
+    next->kernel_rsp = next->kernel_rsp - sizeof(struct reg_info);
+    uint64_t diff = cur->user_rsp - reg->rsp;
+    reg->rsp = next->user_rsp - diff;
+    set_tss_rsp((uint64_t *)next->kernel_rsp);
+    return;
+}
 
 void first_switch_to(task_struct *cur, task_struct *next);
 
@@ -350,7 +358,7 @@ void update_run_queue() {
       s_run_queue_tail = s_run_queue_head;
       s_run_queue_head = save;
   }
-  return; 
+  return;
 }
 
 uint64_t sys_yield() {
@@ -380,7 +388,7 @@ uint64_t sys_yield() {
 void test_user_function()
 {
     kprintf(" Did I Crash?");
-    
+
     __asm__ __volatile__
     (
       "movq $0x20, %%rsi\n"
@@ -389,12 +397,12 @@ void test_user_function()
       :
     );
 
-    __asm__ __volatile__("int $0x80\n"); 
+    __asm__ __volatile__("int $0x80\n");
 
     while(1) {}
-    /*__asm__ __volatile__ 
+    /*__asm__ __volatile__
     (
-        "cli;\n" 
+        "cli;\n"
         :
         :
     );
@@ -418,8 +426,8 @@ void test_switch_to_ring3() {
        :
        :"r" (s_sbush_process->user_rsp)
     );
-    
-    __asm__ __volatile__ 
+
+    __asm__ __volatile__
     (   "pushq %0\n"
         "iretq\n"
         :
@@ -440,8 +448,8 @@ void switch_to_ring3(task_struct* cur, task_struct* next) {
        :
        :"r" (next->user_rsp)
     );
-    
-    __asm__ __volatile__ 
+
+    __asm__ __volatile__
     (   "pushq %0\n"
         "iretq\n"
         :
@@ -506,7 +514,7 @@ void test_vma_find_node_from_empty_vma_list() {
                     }
                 } else {
                     kprintf("\nFAIL : Deleting node after adding to empty vma list failed");
-                }                
+                }
             } else {
                 kprintf("\nFAIL : searching node after adding to empty vma list returned wrong node");
             }
@@ -526,7 +534,7 @@ void test_vma_find_node_from_empty_vma_list() {
     add_vma(5); // start = 15, end = 20
     add_vma(4); // start = 20, end = 24
     add_vma(3); // start = 24, end = 27
-    
+
     print_vma();
     vma * node = find_vma(15);
     if (node != NULL && node->start_addr == 15 && node->end_addr == 20) {
@@ -555,7 +563,7 @@ void test_vma_find_node_from_empty_vma_list() {
         kprintf("\nFAIL : Search middle element from list after delete");
     } else {
         kprintf("\nPASS : Search middle element from list after delete");
-    }  
+    }
 
     delete_vma(0);
     node = find_vma(0);
@@ -601,7 +609,7 @@ void test_dir_find_node_from_empty_list() {
 
 void test_dir_add_node_to_empty_list() {
 	if(add_dir(1, NULL)) {
-		struct dir_info * node = find_dir(0); // This is first open file 
+		struct dir_info * node = find_dir(0); // This is first open file
 		if (node == NULL) {
 			kprintf("\nFAIL : searching node after adding to empty list failed");
 		} else {
@@ -630,7 +638,7 @@ void test_dir_operations_on_bigger_list() {
      add_dir(5, NULL); // start = 6
      add_dir(4, NULL); // start = 7
      add_dir(3, NULL); // start = 8
- 
+
      print_dir();
      struct dir_info * node = find_dir(5);
      if (node != NULL) {
@@ -638,21 +646,21 @@ void test_dir_operations_on_bigger_list() {
      } else {
          kprintf("\nFAIL : Search middle element from list");
      }
- 
+
      node = find_dir(1);
      if (node != NULL) {
          kprintf("\nPASS : Search last element from list");
      } else {
          kprintf("\nFAIL : Search last element from list");
      }
- 
+
      node = find_dir(8);
      if (node != NULL) {
          kprintf("\nPASS : Search first element from list");
      } else {
          kprintf("\nFAIL : Search first element from list");
      }
- 
+
      delete_dir(5);
      node = find_dir(5);
      if (node != NULL) {
@@ -660,7 +668,7 @@ void test_dir_operations_on_bigger_list() {
      } else {
          kprintf("\nPASS : Search middle element from list after delete");
      }
- 
+
      delete_dir(1);
      node = find_dir(1);
      if (node != NULL) {
@@ -668,7 +676,7 @@ void test_dir_operations_on_bigger_list() {
      } else {
          kprintf("\nPASS : Search last element from list after delete");
      }
- 
+
      delete_dir(8);
      node = find_dir(8);
      if (node != NULL) {
@@ -676,7 +684,7 @@ void test_dir_operations_on_bigger_list() {
      } else {
          kprintf("\nPASS : Search first element from list after delete");
      }
- 
+
      print_dir();
  }
 
@@ -705,7 +713,7 @@ void test_open_dir_for_existing_directory() {
 	        kprintf("\n FAIL : sys_closedir for non existing directory");
 	    }
 	}
-	
+
  void test_close_dir_for_existing_directory() {
 	struct dir_info * dirinfo = sys_opendir("rootfs/lib");
 	if (sys_closedir(dirinfo) == 0) {
@@ -754,7 +762,7 @@ void test_chdir() {
 	sys_chdir("..");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
-	
+
 	sys_chdir("rootfs/lib");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
@@ -762,7 +770,7 @@ void test_chdir() {
 	sys_chdir("..");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
-	
+
 	sys_chdir("rootfs/lib/libc.a");
 	sys_getcwd(result, 256);
 	kprintf("\n Current working directory is : %s", result);
@@ -798,7 +806,7 @@ void test_terminal() {
     terminal_write(1, buf, len);
     kprintf("\n");
     }
-     
+
     kfree((uint64_t) addr);
 }
 
@@ -916,7 +924,7 @@ void test_process_queue() {
     kill_task(4);
     kill_task(5);
     kill_task(6);
- 
+
     kprintf("\n Task%d, (P:%d, PP:%d) %p", 7, task->pid, task->ppid, task);
     for(int i = 0; i<10; ++i) {
         if(s_process_queue[i].cur_task == NULL) {

@@ -99,14 +99,14 @@ int parse_command(char * buff, char * arg) {
 
 int main(int argc, char *argv[], char *envp[]) {
 
-	printf("\n**************************************************************");
+	/*printf("\n**************************************************************");
 	printf("\nLook at rootfs/etc/command.txt file for all supported commands\n");
 	printf("**************************************************************\n");
-    
+   */ 
     char buf[100];
 	char arg[100];
 
-    /*uint64_t pid = fork();
+    uint64_t pid = fork();
     if( pid == 0) {
         printf(" I am Child !!! RET = %d ", pid);
         while(1) { }
@@ -115,7 +115,7 @@ int main(int argc, char *argv[], char *envp[]) {
         printf(" I am Parent !!! CPID = %d ", pid);
         //yield();
         while(1) { }
-    }*/
+    }
 
     while(1) {
       puts("\nsbush~>");
