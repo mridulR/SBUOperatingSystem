@@ -192,6 +192,21 @@ bool create_add_vma(uint64_t start_addr, uint64_t end_addr, Vma_Type type) {
     return true;
 }
 
+void delete_all_vma(vma* root) {
+    if(root == NULL) {
+        return;
+    }
+    
+    vma* trav = root->next;
+    vma * save = NULL;
+    while(trav != NULL) {
+      save = trav->next;
+      kfree((uint64_t)trav);
+      trav = save; 
+    }
+}
+
+
 bool delete_vma(uint64_t start_addr) {
     vma * vma_entry = find_vma(start_addr);
     if (vma_entry == NULL) {

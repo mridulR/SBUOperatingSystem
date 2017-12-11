@@ -23,6 +23,7 @@
 #define PDPT_ENTRY_INDEX(addr)        ((addr >> 30) & 0x1FF)
 #define PML4_ENTRY_INDEX(addr)        ((addr >> 39) & 0x1FF)
 #define PAGE_GET_PHYSICAL_ADDRESS(x)  ((x) & ~0xFFF)
+#define SET_COW_BIT(x)                ((x) & ~0x002)
 
 #define KERN_BASE 0xffffffff80000000
 

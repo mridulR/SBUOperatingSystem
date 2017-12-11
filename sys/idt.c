@@ -70,6 +70,7 @@ extern void sys_kill(int flag, int pid);
 extern void sys_sleep(int time);
 extern int sys_wait(uint64_t status);
 int sys_waitpid(int pid, uint64_t status, int options);
+uint64_t sys_execve(char* path, char* arg, char*env);
 
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
@@ -289,6 +290,9 @@ void helper_syscall_handler() {
             break;
         case __NR_waitpid_64:
             retval = sys_waitpid(reg->rbx, reg->rcx, reg->rdx);
+            break;
+        case __NR_execve_64:
+            sys_execve((char *)reg->rbx, (char *)reg->rcx, (char *)reg->rdx);
             break;
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);

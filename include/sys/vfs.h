@@ -11,6 +11,7 @@ v_file_node* search_file(const char* dir_path, v_file_node * start_node);
 
 //For Testing
 void print_node_inorder(v_file_node* root);
+void delete_all_vma(vma* root);
 
 
 #endif

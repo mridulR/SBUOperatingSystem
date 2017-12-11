@@ -44,5 +44,5 @@ typedef struct {
 
 
 task_struct * create_elf_process(char * file_name, char *argv[]);
-
+void create_elf_process_from_binary(task_struct* elf_task, char * file_name, char *argv[]);
 #endif

@@ -343,7 +343,7 @@ task_struct* create_task(uint64_t ppid) {
 uint64_t sys_fork() {
   task_struct* task = copy_task_struct(s_cur_run_task);
   add_new_task_to_run_queue_end(task);
-  //sys_yield();
+  sys_yield();
   return task->pid;
 }
 
@@ -419,6 +419,14 @@ void sys_kill(int flag, int pid) {
         kill_task(pid);
     }
     kprintf("\n Successfully killed process: (Process%d, PID: %d)", pid, pid);
+    return;
+}
+
+void sys_execve(char* path, char*argv, char* env) {
+    create_elf_process_from_binary(s_cur_run_task, "rootfs/bin/ls", NULL);
+    //create_elf_process("rootfs/bin/ls", NULL);
+    //add_new_task_to_run_queue_end(task);
+    //sys_yield();
     return;
 }
 

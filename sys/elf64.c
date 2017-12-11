@@ -18,6 +18,7 @@ extern void sys_clrscreen();
 typedef uint8_t bool;
 extern task_struct* s_init_process;
 extern task_struct* s_cur_run_task;
+extern uint64_t s_pml4_table;
 
 uint64_t UB       = 0x0000000F00000000;
 uint64_t HEAP_END = 0x0000000EFFFF0000;
@@ -180,7 +181,30 @@ bool is_elf_file(Elf64_Ehdr * elf_header) {
     return false;
 }
 
+void create_elf_process_from_binary(task_struct* elf_task, char * file_name, char *argv[]) {
+    file_name = "rootfs/bin/ls";
+    v_file_node* vfs_node = search_file(file_name, tarfs_mount_node);
+    if (vfs_node == NULL) {
+        kprintf("No ELF file found at location : %s", file_name);
+        return;
+    }
 
+    Elf64_Ehdr * elf_header = (Elf64_Ehdr *) vfs_node->start_addr;
+
+    if (!is_elf_file(elf_header)) {
+        kprintf("Elf_header not found for : %s", file_name);
+        return;
+    }
+
+    s_cur_run_task = elf_task;
+    delete_all_vma(elf_task->vma_root);
+    elf_task->pml4 = kmalloc(PAGE_SIZE);
+    //kprintf(" USER PML4: %p ", task->pml4);
+    memcpy((uint64_t *)(KB + elf_task->pml4), (uint64_t *)(KB + s_pml4_table), PAGE_SIZE);
+ 
+    parse_elf_and_fill_pcb(elf_header, elf_task);         
+    return;
+}
 
 task_struct * create_elf_process(char * file_name, char *argv[]) {
     

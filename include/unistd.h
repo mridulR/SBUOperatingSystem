@@ -45,4 +45,5 @@ uint64_t yield();
 
 void ps();
 
+void kill(int flag, int pid);
 #endif

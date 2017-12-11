@@ -257,7 +257,7 @@ int fork()
   return (int)ret_val;
 }
 
-int execvpe(const char *path, char *const argv[], char *const envp[])
+int execve(const char *path, char *const argv[], char *const envp[])
 {
 
   uint64_t syscall_num = (uint64_t)__NR_execve_64;
