@@ -258,9 +258,9 @@ void helper_syscall_handler() {
 			break;
         case __NR_fork_64 :
             cur_pid = s_cur_run_task->pid;
-            kprintf(" \n\n CURRENT PID : %d ", cur_pid);
+            kprintf(" \n CURRENT PID : %d ", cur_pid);
             new_pid = sys_fork();
-            kprintf(" \n\n NEXT PID : %d ", new_pid);
+            kprintf(" \n NEXT PID : %d ", new_pid);
             if( new_pid == cur_pid ) {
                 retval = new_pid;
             }
@@ -271,7 +271,7 @@ void helper_syscall_handler() {
             break;
         case __NR_yield_64 :
             retval = sys_yield();
-            kprintf(" After Context Switch : \n");
+            kprintf("\nAfter Context Switch : \n");
             printRunQueue();
         case __NR_exit_64 :
             sys_exit(reg->rbx);

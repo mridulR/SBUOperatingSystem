@@ -437,7 +437,7 @@ void sys_exit(int status) {
     task->child_exit_status = 1;
     task->child_exit_pid = save->pid;
     sys_yield();
-    printRunQueue();
+    //printRunQueue();
     kill_task(save->pid);
     //printRunQueue();
     return;
@@ -461,8 +461,6 @@ void sys_ps() {
     }
     kprintf("\n \n");
     kprintf("\n \n");
-    print_process_queue();
-    kprintf("\n Pcount(%d , %d) \n", s_free_process_count, s_cur_free_process_index);
 }
 
 void sys_sleep(int time) {
