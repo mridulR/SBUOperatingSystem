@@ -68,6 +68,8 @@ extern void sys_exit(int status);
 extern void sys_ps();
 extern void sys_kill(int flag, int pid);
 extern void sys_sleep(int time);
+extern int sys_wait(uint64_t status);
+int sys_waitpid(int pid, uint64_t status, int options);
 
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
@@ -192,6 +194,8 @@ void helper_syscall_handler() {
     reg = (struct reg_info *)addr;
 
     uint64_t retval = 0;
+    uint64_t cur_pid = 0;
+    uint64_t new_pid = 0;
     uint64_t syscallNum = reg->rax;
 
     /*kprintf(" SH: rax = %p rbx= %p rcx= %p rdx = %p rsi= %p rdi= %p \n", 
@@ -252,8 +256,16 @@ void helper_syscall_handler() {
 			retval = sys_chdir((const char *) reg->rbx);
 			break;
         case __NR_fork_64 :
-            sys_fork();
-            retval = 0;
+            cur_pid = s_cur_run_task->pid;
+            kprintf(" \n\n CURRENT PID : %d ", cur_pid);
+            new_pid = sys_fork();
+            kprintf(" \n\n NEXT PID : %d ", new_pid);
+            if( new_pid == cur_pid ) {
+                retval = new_pid;
+            }
+            else {
+                retval = 0;
+            }
             printRunQueue();
             break;
         case __NR_yield_64 :
@@ -271,6 +283,12 @@ void helper_syscall_handler() {
             break;
         case __NR_sleep_64:
             sys_sleep(reg->rbx);
+            break;
+        case __NR_wait_64 :
+            retval = sys_wait(reg->rbx);
+            break;
+        case __NR_waitpid_64:
+            retval = sys_waitpid(reg->rbx, reg->rcx, reg->rdx);
             break;
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);

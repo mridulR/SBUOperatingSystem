@@ -21,6 +21,7 @@
 #define __NR_ps_64 248
 #define __NR_kill_64 247
 #define __NR_sleep_64 246
+#define __NR_wait_64 245
 
 #define __NR_read_64 0
 #define __NR_write_64 1

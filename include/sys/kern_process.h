@@ -11,6 +11,7 @@ typedef enum State {
     INIT,
     RUNNING,
     SLEEPING,
+    WAITING,
     ZOMBIE
 }State;
 
@@ -26,7 +27,8 @@ struct task_struct {
     uint64_t user_rsp;
     uint64_t kstack;
     uint64_t ustack;
-    uint32_t exit_status;
+    uint32_t child_exit_status;
+    uint32_t child_exit_pid;
     Mode mode;
     uint64_t rip;
     uint64_t pml4; 
@@ -72,5 +74,15 @@ void kill_task(uint64_t pid);
 void LaunchSbush();
 void init_start();
 uint64_t sys_yield();
+task_struct* find_process_with_pid(int pid);
+task_struct* find_first_child(int pid);
+int sys_wait(uint64_t status);
+int sys_waitpid(int pid, uint64_t status, int options);
+void sys_kill(int flag, int pid);
+void sys_exit(int status);
+void sys_ps();
+void sys_sleep(int time);
+void schedule_next(task_struct* cur, task_struct* next);
+uint64_t sys_fork();
 
 #endif

@@ -116,7 +116,11 @@ int main(int argc, char *argv[], char *envp[]) {
     }
     else {
         printf(" I am Parent !!! CPID = %d ", pid);
-        //yield();
+        yield();
+        int status;
+        printf(" Waiting for child !!! CPID = %d ", pid);
+        wait(&status);
+        printf(" Waiting Complete !!! CPID = %d ", pid);
         while(1) { }
     }
 

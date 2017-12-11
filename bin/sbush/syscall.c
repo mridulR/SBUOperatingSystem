@@ -281,6 +281,28 @@ int execve(const char *path, char *const argv[], char *const envp[])
   return (int)ret_val;
 }
 
+
+int wait(int *status)
+{
+
+  uint64_t syscall_num = (uint64_t)__NR_waitpid_64;
+  uint64_t arg1 = (uint64_t) status;
+  uint64_t ret_val = 0;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
+  );
+  return (int)ret_val;
+}
+
+
 int waitpid(int pid, int *status, int options)
 {
 

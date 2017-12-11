@@ -208,7 +208,8 @@ task_struct* copy_task_struct(task_struct *copy_task) {
     task->kernel_rsp = KB + task->kstack + PS;
     task->user_rsp   = UB + PS;
 
-    task->exit_status = 0;
+    task->child_exit_status = -1;
+    task->child_exit_pid = -1;
     task->state = INIT;
     task->mode = KERNEL;
     task->rip = 0;
@@ -242,6 +243,28 @@ task_struct* copy_task_struct(task_struct *copy_task) {
 	// Current working directory should be first set to 'rootfs/bin'
 	memcpy(&(task->cwd),"rootfs/bin", 10);
     return task;
+}
+
+void update_run_queue() {
+  if(s_run_queue_head != s_run_queue_tail) {
+      task_struct * save = s_run_queue_head->next;
+      s_run_queue_tail->next = s_run_queue_head;
+      s_run_queue_head->next = NULL;
+      s_run_queue_head->prev = s_run_queue_tail;
+      s_run_queue_tail = s_run_queue_head;
+      s_run_queue_head = save;
+  }
+  return;
+}
+
+
+void switch_to(task_struct *cur, task_struct *next) {
+    cur->kernel_rsp  = (uint64_t) reg;
+    next->kernel_rsp = next->kernel_rsp - sizeof(struct reg_info);
+    uint64_t diff = cur->user_rsp - reg->rsp;
+    reg->rsp = next->user_rsp - diff;
+    set_tss_rsp((uint64_t *)next->kernel_rsp);
+    return;
 }
 
 
@@ -287,9 +310,10 @@ task_struct* create_task(uint64_t ppid) {
     task->kernel_rsp = KB + task->kstack + PS;
     //task->user_rsp   = KB + task->ustack + PS;
     task->user_rsp   = 0;
-    task->exit_status = 0;
     task->state = INIT;
     task->mode = KERNEL;
+    task->child_exit_status = -1;
+    task->child_exit_pid    = -1;
     task->rip = 0;
     task->pml4 = kmalloc(PAGE_SIZE);
     //kprintf(" USER PML4: %p ", task->pml4);
@@ -319,8 +343,75 @@ task_struct* create_task(uint64_t ppid) {
 uint64_t sys_fork() {
   task_struct* task = copy_task_struct(s_cur_run_task);
   add_new_task_to_run_queue_end(task);
-  sys_yield();
+  //sys_yield();
   return task->pid;
+}
+
+void schedule_next(task_struct* cur, task_struct* next) {
+    if(next != NULL && cur != next) {
+        kprintf(" Will do Context Switch cur(%d) to next(%d) !!!", s_cur_run_task->pid, next->pid);
+        set_cr3_register(next->pml4);
+        __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
+        __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
+        switch_to(cur, next);
+        s_cur_run_task = next;
+        next->state = RUNNING;
+        update_run_queue();
+    }
+}
+
+task_struct* find_process_with_pid(int pid) {
+    task_struct *task;
+    for(int i=0; i< 2048; ++i) {
+        task = s_process_queue[i].cur_task;
+        if(task->pid == pid){
+            return task;
+        }
+    }
+    return NULL;
+}
+
+task_struct* find_first_child(int pid) {
+    task_struct *task;
+    for(int i=0; i< 2048; ++i) {
+        task = s_process_queue[i].cur_task;
+        if(task->ppid == pid){
+            return task;
+        }
+    }
+    return NULL;
+}
+
+int sys_wait(uint64_t status) {
+   task_struct* task = find_first_child(s_cur_run_task->pid);
+   if(task == NULL) {
+       if(task->child_exit_status != -1) {
+           // Child already exited. Return immediately
+           *(uint64_t *)status = task->child_exit_status;
+           return 0;
+       }
+       kprintf("\nProcess had no child. Returning to parent process !! \n");
+       return 0;
+   }
+   s_cur_run_task->state  = WAITING;
+   schedule_next(s_cur_run_task, task);
+   return task->child_exit_pid;
+}
+
+int sys_waitpid(int pid, uint64_t status, int options) {
+   task_struct* task = find_first_child(pid);
+   if(task == NULL) {
+       if(task->child_exit_status != -1) {
+           // Child already exited. Return immediately
+           *(uint64_t *)status = task->child_exit_status;
+           return 0;
+       }
+       kprintf("\nProcess had no child. Returning to parent process !! \n");
+       return 0;
+   }
+   s_cur_run_task->state  = WAITING;
+   schedule_next(s_cur_run_task, task);
+   return task->child_exit_pid;   
 }
 
 void sys_kill(int flag, int pid) {
@@ -334,11 +425,13 @@ void sys_kill(int flag, int pid) {
 void sys_exit(int status) {
     kprintf(" Invoked Exit : PID %d NPID: %d ", s_cur_run_task->pid, s_cur_run_task->next->pid);
     task_struct *save = s_cur_run_task;
+    task_struct* task = find_process_with_pid(save->ppid);
+    task->child_exit_status = 1;
+    task->child_exit_pid = save->pid;
     sys_yield();
     printRunQueue();
     kill_task(save->pid);
-    kprintf("HELLO\n");
-    printRunQueue();
+    //printRunQueue();
     return;
 }
 
@@ -393,31 +486,10 @@ void kill_task(uint64_t pid) {
     return;
 }
 
-void switch_to(task_struct *cur, task_struct *next) {
-    cur->kernel_rsp  = (uint64_t) reg;
-    next->kernel_rsp = next->kernel_rsp - sizeof(struct reg_info);
-    uint64_t diff = cur->user_rsp - reg->rsp;
-    reg->rsp = next->user_rsp - diff;
-    set_tss_rsp((uint64_t *)next->kernel_rsp);
-    return;
-}
-
 void first_switch_to(task_struct *cur, task_struct *next);
 
 task_struct* get_next_task_from_run_queue() {
     return s_cur_run_task->next;
-}
-
-void update_run_queue() {
-  if(s_run_queue_head != s_run_queue_tail) {
-      task_struct * save = s_run_queue_head->next;
-      s_run_queue_tail->next = s_run_queue_head;
-      s_run_queue_head->next = NULL;
-      s_run_queue_head->prev = s_run_queue_tail;
-      s_run_queue_tail = s_run_queue_head;
-      s_run_queue_head = save;
-  }
-  return;
 }
 
 uint64_t sys_yield() {
