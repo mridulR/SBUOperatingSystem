@@ -109,6 +109,9 @@ int main(int argc, char *argv[], char *envp[]) {
     uint64_t pid = fork();
     if( pid == 0) {
         printf(" I am Child !!! RET = %d ", pid);
+        ps();
+        sleep(5);
+        exit(0);
         while(1) { }
     }
     else {

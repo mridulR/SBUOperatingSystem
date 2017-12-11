@@ -18,6 +18,9 @@
 #define __NR_readdir_64 251
 #define __NR_closedir_64 252
 #define __NR_clrscr_64 255
+#define __NR_ps_64 248
+#define __NR_kill_64 247
+#define __NR_sleep_64 246
 
 #define __NR_read_64 0
 #define __NR_write_64 1

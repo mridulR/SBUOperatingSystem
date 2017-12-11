@@ -17,9 +17,11 @@
 #include <sys/terminal.h>
 #include <sys/dirent_s.h>
 #include <sys/chdir.h>
+#include <sys/pit.h>
 
 #define PAGE_SIZE 0x1000
 
+//extern uint32_t g_pit_count;
 extern struct reg_info* reg;
 extern uint64_t KB;
 extern uint64_t PS;
@@ -51,7 +53,7 @@ Process_queue s_process_queue[2048];
 
 uint64_t s_free_process_count      = 2048;
 uint64_t s_max_process_count       = 2048;
-uint64_t s_cur_free_process_index  = 0;
+uint64_t s_cur_free_process_index  = 1;
 extern uint64_t s_pml4_table;
 
 task_struct* s_run_queue_head = NULL;
@@ -73,6 +75,13 @@ void printRunQueue() {
         kprintf(" Proceess %d \n ", proc->pid);
         proc = proc->next;
     }
+}
+
+void print_process_queue(){
+    for(int i =0; i<10; ++i) {
+        kprintf(" (%d, %d)  ", i, s_process_queue[i].nextIndex);
+    }
+    return;
 }
 
 void init_process_queue() {
@@ -314,6 +323,56 @@ uint64_t sys_fork() {
   return task->pid;
 }
 
+void sys_kill(int flag, int pid) {
+    if(flag == 9){
+        kill_task(pid);
+    }
+    kprintf("\n Successfully killed process: (Process%d, PID: %d)", pid, pid);
+    return;
+}
+
+void sys_exit(int status) {
+    kprintf(" Invoked Exit : PID %d NPID: %d ", s_cur_run_task->pid, s_cur_run_task->next->pid);
+    task_struct *save = s_cur_run_task;
+    sys_yield();
+    printRunQueue();
+    kill_task(save->pid);
+    kprintf("HELLO\n");
+    printRunQueue();
+    return;
+}
+
+void sys_ps() {
+
+    task_struct *trav = s_cur_run_task;
+    kprintf("\n \n");
+    kprintf("\n====================");
+    kprintf("\n| NAME    |    PID |");
+    kprintf("\n====================");
+    while(trav != NULL) {
+        if(trav->pid == 0) {
+            kprintf("\n %s     %d", "SBUSH", 0);
+        }
+        else {
+            kprintf("\n %s %d  %d\n", trav->name, trav->pid, trav->pid);
+        }
+        trav = trav->next;
+    }
+    kprintf("\n \n");
+    kprintf("\n \n");
+    print_process_queue();
+    kprintf("\n Pcount(%d , %d) \n", s_free_process_count, s_cur_free_process_index);
+}
+
+void sys_sleep(int time) {
+  uint64_t count = get_pit_count();
+  __asm__ __volatile__("sti\n");
+  count = count + (4000 * time); 
+  while(count > get_pit_count()) {
+  }
+  return;
+}
+
 void freeTask(task_struct *task) {
     kfree(task->kstack);
     kfree(task->ustack);
@@ -370,12 +429,7 @@ uint64_t sys_yield() {
         set_cr3_register(next->pml4);
         __asm__ __volatile__ ("movq %%cr3,%%rax\n" : : );
         __asm__ __volatile__ ("movq %%rax,%%cr3\n" : : );
-        //if(next->state == INIT) {
-        //    first_switch_to(cur, next);
-        //}
-        //else {
         switch_to(cur, next);
-        //}
         s_cur_run_task = next;
         next->state = RUNNING;
         cur->state  = SLEEPING;

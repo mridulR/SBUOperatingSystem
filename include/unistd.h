@@ -43,4 +43,6 @@ int munmap(void *addr, int length);
 
 uint64_t yield();
 
+void ps();
+
 #endif

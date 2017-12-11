@@ -27,6 +27,7 @@ uint32_t get_pit_count() {
   return g_pit_count;
 }
 
+
 void helper_calculate_timer() {
   ++g_pit_count; 
   if(g_pit_count % 35 == 0) {

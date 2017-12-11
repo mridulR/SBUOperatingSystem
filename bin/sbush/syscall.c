@@ -182,6 +182,7 @@ void exit(int status)
 {
     uint64_t syscall_num = (uint64_t)__NR_exit_64;
     uint64_t arg1 = (uint64_t) status;
+        
     uint64_t ret_val = 0;
 
     __asm__ __volatile__
@@ -191,9 +192,10 @@ void exit(int status)
         "int $0x80\n"
         "movq %%rax,%0\n"
         : "=g" (ret_val)
-        : "g"(syscall_num), "g"(arg1)
-        : "rax"
+        : "g"(syscall_num) , "g"(arg1)
+        : "rax", "rbx", "rcx"
     );
+    return;
 }
 
 int pipe(int pipefd[2])
@@ -509,6 +511,61 @@ uint64_t yield() {
   );  
 
   return ret_val;
+}
+
+
+void ps() { 
+    uint64_t syscall_num = __NR_ps_64;
+    uint64_t ret_val;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num)
+      : "rax"
+  );  
+}
+
+void kill(int flag, int pid) { 
+  uint64_t syscall_num = (uint64_t)__NR_kill_64;
+  uint64_t arg1 = (uint64_t) flag;
+  uint64_t arg2 = (uint64_t) pid;
+  uint64_t ret_val = 0;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "movq %3,%%rcx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1), "g" (arg2)
+      : "rax", "rbx", "rcx"
+  );
+  return;
+}
+
+
+unsigned int sleep(unsigned int time ) { 
+    uint64_t syscall_num = __NR_sleep_64;
+    uint64_t arg1 = (uint64_t) time;
+    uint64_t ret_val = 0;
+
+  __asm__ __volatile__
+  (
+      "movq %1,%%rax\n"
+      "movq %2,%%rbx\n"
+      "int $0x80\n"
+      "movq %%rax,%0\n"
+      : "=g" (ret_val)
+      : "g"(syscall_num), "g" (arg1)
+      : "rax", "rbx"
+  );  
+  return (unsigned int)ret_val;
 }
 
 

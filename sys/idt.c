@@ -64,7 +64,10 @@ extern int sys_closedir(dir_info *dirp);
 extern int sys_chdir(const char *path);
 extern uint64_t sys_fork();
 extern uint64_t sys_yield();
-
+extern void sys_exit(int status);
+extern void sys_ps();
+extern void sys_kill(int flag, int pid);
+extern void sys_sleep(int time);
 
 void general_permission_fault() {
     kprintf("\nGENERAL PERMISSION FAULT !!!");
@@ -249,22 +252,26 @@ void helper_syscall_handler() {
 			retval = sys_chdir((const char *) reg->rbx);
 			break;
         case __NR_fork_64 :
-            //uint64_t cur_pid = s_cur_run_task->pid;
             sys_fork();
-            //reg->rsp = s_cur_run_task->user_rsp;
-            //if() {
-            //    retval = 0;
-            //}
-            //else {
             retval = 0;
-            //}
-            //sys_yield();
             printRunQueue();
             break;
         case __NR_yield_64 :
             retval = sys_yield();
             kprintf(" After Context Switch : \n");
             printRunQueue();
+        case __NR_exit_64 :
+            sys_exit(reg->rbx);
+            break;
+        case __NR_ps_64 :
+            sys_ps();
+            break;
+        case __NR_kill_64 :
+            sys_kill(reg->rbx, reg->rcx);
+            break;
+        case __NR_sleep_64:
+            sys_sleep(reg->rbx);
+            break;
         default:
             kprintf("Syascall no %p is not implemented, \n", syscallNum);
     }
