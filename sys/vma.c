@@ -91,7 +91,7 @@ uint8_t check_vma_access(uint64_t addr) {
         return 0;
     }
     while (trav != NULL) {
-        if (trav->start_addr >= addr && trav->end_addr < addr ) {
+        if (trav->start_addr <= addr && trav->end_addr > addr ) {
             if(trav->vma_type == TEXT) {
                 return 0;
             }
